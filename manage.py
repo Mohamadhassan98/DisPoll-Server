@@ -5,13 +5,10 @@ import sys
 
 from tick_project import settings
 
+ran = False
+
 
 def main():
-    settings.ALLOWED_HOSTS.append(sys.argv[-1])
-    Main(1)
-
-
-def Main(flag):
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tick_project.settings')
     try:
         from django.core.management import execute_from_command_line
@@ -25,4 +22,10 @@ def Main(flag):
 
 
 if __name__ == '__main__':
+    if not ran:
+        ran = True
+        print("Do you want to allow a host?(Yes/No)")
+        ans = input()
+        if ans == "Yes":
+            settings.ALLOWED_HOSTS.append(input())
     main()

@@ -21,11 +21,11 @@ from Tick_server.views import SignUpFirst, SignUpSecond, ResendCode, Login, Sign
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('signup/phone-auth', SignUpFirst.as_view(), name = 'signup_first'),
-    path('signup/confirm-phone', SignUpSecond.as_view(), name = 'signup_second'),
-    path('signup/resend-code', ResendCode.as_view(), name = 'resend_code'),
-    path('signup/complete-info', SignUpFinal.as_view(), name = 'signup_final'),
+    path('signup/phone-auth/', SignUpFirst.as_view(), name = 'signup_first'),
+    path('signup/confirm-phone/', SignUpSecond.as_view(), name = 'signup_second'),
+    path('signup/resend-code/', ResendCode.as_view(), name = 'resend_code'),
+    path('signup/complete-info/', SignUpFinal.as_view(), name = 'signup_final'),
     path('login/', Login.as_view(), name = 'login'),
-    path('/discounts/active', ActiveDiscountListView.as_view(), name = 'active_discounts'),
-    path('/discounts/inactive', InactiveDiscountListView.as_view(), name = 'inactive_discounts')
+    path('discounts/active/', ActiveDiscountListView.as_view(), name = 'active_discounts'),
+    path('discounts/inactive/', InactiveDiscountListView.as_view(), name = 'inactive_discounts')
 ]

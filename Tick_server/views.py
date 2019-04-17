@@ -17,7 +17,7 @@ class SignUpFirst(APIView):
                 'message': 'کاربری با این شماره تلفن قبلاً ثبت‌نام کرده.',
             })
         else:
-            Code4Digit.objects.create(phone_number = phone, code = '1111')
+            Code4Digit.objects.update_or_create(phone_number = phone, defaults = { 'code': '1111' })
             return Response({
                 'result': True,
                 'message': 'شماره تلفن با موفقیت ثبت شد.',
@@ -44,7 +44,7 @@ class SignUpSecond(APIView):
 class ResendCode(APIView):
     def post(self, request, format = None):
         phone = request.data['phone_number']
-        Code4Digit.objects.get(phone_number = phone).update(code = '1111')
+        Code4Digit.objects.filter(phone_number = phone).update(code = '1111')
         return Response({
             'result': True,
             'message': 'کد مجدداً ارسال شد.',
