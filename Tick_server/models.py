@@ -17,7 +17,7 @@ class Customer(AbstractUser):
     location = models.CharField(max_length = 100, null = True, blank = True)
     phone_number = models.CharField(max_length = 13, unique = True)
     city = models.ForeignKey(City, on_delete = models.CASCADE, null = True, blank = True)
-    # linear_scale_poll_answers
+    linear_scale_poll_answers = models.ManyToManyField(LinearScalePoll, through = LinearScalePollAnswer)
 
 
 class Code4Digit(models.Model):
