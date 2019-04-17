@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Permission
 from django.db import models
 from django.utils import timezone
 
@@ -62,7 +62,14 @@ class ShortAnswerPoll(Poll):
     pass
 
 
-class Customer(AbstractUser):
+class CustomUser(AbstractUser):
+    TYPES = (
+        ('SU', 'Super User'),
+        ('CU', 'Customer'),
+        ('SM', 'Salesman')
+    )
+    user_type = models.CharField(max_length = 2, choices = TYPES)
+    is_superuser = user_type == 'SU'
     birth_date = models.DateField(null = True, blank = True)
     GENDER = (
         ('m', 'Male'),
@@ -72,6 +79,13 @@ class Customer(AbstractUser):
     location = models.CharField(max_length = 100, null = True, blank = True)
     phone_number = models.CharField(max_length = 13, unique = True)
     city = models.ForeignKey(City, on_delete = models.CASCADE, null = True, blank = True)
+
+    class Meta:
+        abstract = True
+
+
+class Customer(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete = models.CASCADE)
     linear_scale_poll_answers = models.ManyToManyField(LinearScalePoll, through = 'LinearScalePollAnswer')
     paragraph_poll_answers = models.ManyToManyField(ParagraphPoll, through = 'ParagraphPollAnswer')
     checkbox_poll_answers = models.ManyToManyField(CheckBoxOption, through = 'CheckBoxPollAnswer')
@@ -120,7 +134,8 @@ class Code4Digit(models.Model):
     code = models.CharField(max_length = 4)
 
 
-class Salesman(Customer):
+class Salesman(AbstractUser):
+    user = models.OneToOneField(CustomUser, on_delete = models.CASCADE)
     avatar = models.ImageField()
 
 

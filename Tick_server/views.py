@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Tick_server.models import Code4Digit, Customer, Discount
-from Tick_server.serializers import CustomerSerializer, DiscountSerializer
+from Tick_server.serializers import CustomerSerializer, DiscountSerializer, PollSerializer
 
 
 # noinspection PyMethodMayBeStatic
@@ -124,14 +124,30 @@ class InactiveDiscountListView(APIView):
         })
 
 
-class NotCompletePollList(APIView):
+class NotCompletedPollList(APIView):
     def post(self, request, Format = None):
         page = request.data['post']
         offset = request.data['offset']
         phone = request.data['phone_number']
         customer = Customer.objects.get(phone_number = phone)
-        linear_scale_polls = customer.linear_scale_poll_answer.filter(completed = False)
-        paragraph_scale_polls = customer.paragraph_poll_answers.filter(completed = False)
-        short_answer_polls = customer.short_answer_poll_answers.filter(completed = False)
-        multiple_choice_polls = customer.multiple_choice_poll_answers.filter(completed = False)
-        checkbox_polls = customer.checkbox_poll_answers.filter(completed = False)
+        polls = []
+        polls.extend(customer.linear_scale_poll_answer.filter(completed = False))
+        polls.extend(customer.paragraph_poll_answers.filter(completed = False))
+        polls.extend(customer.short_answer_poll_answers.filter(completed = False))
+        polls.extend(customer.multiple_choice_poll_answers.filter(completed = False))
+        polls.extend(customer.checkbox_poll_answers.filter(completed = False))
+        polls.sort(key = lambda poll: poll.remaining_time)
+        polls = polls[page - 1 * offset: page * offset]
+        serializer = PollSerializer(polls, many = True)
+        return Response({
+            'result': True,
+            'message': 'جستجو با موفقیت انجام شد.',
+            'polls': serializer.data
+        })
+
+
+class CompletePoll(APIView):
+    def post(self, request, Format = None):
+        poll_id = request.data['poll_id']
+        username = request.data['username']
+        poll_type = request.data['poll_type']

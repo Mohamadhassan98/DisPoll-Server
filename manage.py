@@ -5,8 +5,6 @@ import sys
 
 from tick_project import settings
 
-ran = False
-
 
 def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tick_project.settings')
@@ -22,10 +20,8 @@ def main():
 
 
 if __name__ == '__main__':
-    if not ran:
-        ran = True
-        print("Do you want to allow a host?(Yes/No)")
-        ans = input()
-        if ans == "Yes":
-            settings.ALLOWED_HOSTS.append(input())
+    print("Do you want to allow a host?(Yes/No)")
+    ans = input()
+    if ans == "Yes":
+        settings.ALLOWED_HOSTS.append(input())
     main()
