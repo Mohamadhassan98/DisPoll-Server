@@ -3,8 +3,16 @@
 import os
 import sys
 
+from tick_project import settings
+
 
 def main():
+    if len(sys.argv) > 2:
+        settings.ALLOWED_HOSTS.append(sys.argv[2])
+    Main(1)
+
+
+def Main(flag):
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tick_project.settings')
     try:
         from django.core.management import execute_from_command_line

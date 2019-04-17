@@ -102,4 +102,3 @@ class MultipleChoiceOption(models.Model):
     answer_text = models.CharField(max_length = 100)
     selected = models.BooleanField(default = False)
     poll = models.ForeignKey(MultipleChoicePoll, on_delete = models.CASCADE)
-    
