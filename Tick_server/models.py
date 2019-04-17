@@ -79,30 +79,37 @@ class Customer(AbstractUser):
     multiple_choice_poll_answers = models.ManyToManyField(MultipleChoiceOption, through = 'MultipleChoiceAnswer')
 
 
-class ShortAnswerPollAnswer(models.Model):
+class PollAnswer(models.Model):
+    completed = models.BooleanField(default = False)
+
+    class Meta:
+        abstract = True
+
+
+class ShortAnswerPollAnswer(PollAnswer):
     answer_text = models.CharField(max_length = 100)
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'short_answer_poll_answer')
     poll = models.ForeignKey(ShortAnswerPoll, on_delete = models.CASCADE, related_name = 'short_answer_poll_answer')
 
 
-class CheckBoxPollAnswer(models.Model):
+class CheckBoxPollAnswer(PollAnswer):
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'checkbox_poll_answer')
     option = models.ForeignKey(CheckBoxOption, on_delete = models.CASCADE, related_name = 'checkbox_poll_answer')
 
 
-class ParagraphPollAnswer(models.Model):
+class ParagraphPollAnswer(PollAnswer):
     answer_text = models.TextField()
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'paragraph_poll_answer')
     poll = models.ForeignKey(ParagraphPoll, on_delete = models.CASCADE, related_name = 'paragraph_poll_answer')
 
 
-class LinearScalePollAnswer(models.Model):
+class LinearScalePollAnswer(PollAnswer):
     answer = models.IntegerField()
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answer')
     poll = models.ForeignKey(LinearScalePoll, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answer')
 
 
-class MultipleChoiceAnswer(models.Model):
+class MultipleChoiceAnswer(PollAnswer):
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'multiple_choice_answer')
     option = models.ForeignKey(MultipleChoiceOption, on_delete = models.CASCADE,
                                related_name = 'multiple_choice_answer')

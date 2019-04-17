@@ -122,3 +122,16 @@ class InactiveDiscountListView(APIView):
             'message': 'جستجو با موفقیت انجام شد.',
             'discounts': serializer.data
         })
+
+
+class NotCompletePollList(APIView):
+    def post(self, request, Format = None):
+        page = request.data['post']
+        offset = request.data['offset']
+        phone = request.data['phone_number']
+        customer = Customer.objects.get(phone_number = phone)
+        linear_scale_polls = customer.linear_scale_poll_answer.filter(completed = False)
+        paragraph_scale_polls = customer.paragraph_poll_answers.filter(completed = False)
+        short_answer_polls = customer.short_answer_poll_answers.filter(completed = False)
+        multiple_choice_polls = customer.multiple_choice_poll_answers.filter(completed = False)
+        checkbox_polls = customer.checkbox_poll_answers.filter(completed = False)
