@@ -1,10 +1,9 @@
 from django.contrib.auth import login
 from rest_framework.response import Response
-from rest_framework.utils import json
 from rest_framework.views import APIView
 
 from Tick_server.models import Code4Digit, Customer, Discount
-from Tick_server.serializers import CustomerSerializer
+from Tick_server.serializers import CustomerSerializer, DiscountSerializer
 
 
 # noinspection PyMethodMayBeStatic
@@ -102,11 +101,11 @@ class ActiveDiscountListView(APIView):
         phone = request.data['phone_number']
         discounts = Discount.objects.filter(active = True, customer = Customer.objects.get(phone_number = phone))[
                     page - 1 * offset: page * offset]
-        json.dump(discounts)
+        serializer = DiscountSerializer(discounts, many = True)
         return Response({
             'result': True,
             'message': 'جستجو با موفقیت انجام شد.',
-
+            'discounts': serializer.data
         })
 
 
@@ -117,3 +116,9 @@ class InactiveDiscountListView(APIView):
         phone = request.data['phone_number']
         discounts = Discount.objects.filter(active = False, customer = Customer.objects.get(phone_number = phone))[
                     page - 1 * offset: page * offset]
+        serializer = DiscountSerializer(discounts, many = True)
+        return Response({
+            'result': True,
+            'message': 'جستجو با موفقیت انجام شد.',
+            'discounts': serializer.data
+        })

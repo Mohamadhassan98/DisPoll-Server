@@ -8,7 +8,7 @@ from tick_project import settings
 
 def main():
     if len(sys.argv) > 2:
-        settings.ALLOWED_HOSTS.append(sys.argv[2])
+        settings.ALLOWED_HOSTS.append(sys.argv[3])
     Main(1)
 
 

@@ -17,6 +17,7 @@ class Customer(AbstractUser):
     location = models.CharField(max_length = 100, null = True, blank = True)
     phone_number = models.CharField(max_length = 13, unique = True)
     city = models.ForeignKey(City, on_delete = models.CASCADE, null = True, blank = True)
+    # linear_scale_poll_answers
 
 
 class Code4Digit(models.Model):
@@ -70,10 +71,15 @@ class Poll(models.Model):
 
 
 class LinearScalePoll(Poll):
-    answer = models.IntegerField()
     choices_count = models.IntegerField()
     start = models.IntegerField()
     step = models.IntegerField()
+
+
+class LinearScalePollAnswer(models.Model):
+    answer = models.IntegerField()
+    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'answer')
+    poll = models.ForeignKey(LinearScalePoll, on_delete = models.CASCADE, related_name = 'answer')
 
 
 class ParagraphPoll(Poll):
