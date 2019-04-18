@@ -80,9 +80,6 @@ class CustomUser(AbstractUser):
     phone_number = models.CharField(max_length = 13, unique = True)
     city = models.ForeignKey(City, on_delete = models.CASCADE, null = True, blank = True)
 
-    class Meta:
-        abstract = True
-
 
 class Customer(models.Model):
     user = models.OneToOneField(CustomUser, on_delete = models.CASCADE)
@@ -134,7 +131,7 @@ class Code4Digit(models.Model):
     code = models.CharField(max_length = 4)
 
 
-class Salesman(AbstractUser):
+class Salesman(models.Model):
     user = models.OneToOneField(CustomUser, on_delete = models.CASCADE)
     avatar = models.ImageField()
 

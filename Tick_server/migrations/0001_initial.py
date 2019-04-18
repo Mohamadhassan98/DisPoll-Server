@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -38,7 +37,8 @@ class Migration(migrations.Migration):
                                                   help_text = 'Designates whether this user should be treated as active. Unselect this instead of deleting accounts.',
                                                   verbose_name = 'active')),
                 (
-                'date_joined', models.DateTimeField(default = django.utils.timezone.now, verbose_name = 'date joined')),
+                    'date_joined',
+                    models.DateTimeField(default = django.utils.timezone.now, verbose_name = 'date joined')),
                 ('user_type', models.CharField(choices = [('SU', 'Super User'), ('Cu', 'Customer'), ('SM', 'Salesman')],
                                                max_length = 2)),
                 ('birth_date', models.DateField(blank = True, null = True)),
