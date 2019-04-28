@@ -2,8 +2,9 @@ from django.contrib.auth import login
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from Tick_server.models import Code4Digit, Customer, Discount
-from Tick_server.serializers import CustomerSerializer, DiscountSerializer, PollSerializer, UserSerializer
+from Tick_server.models import Code4Digit, Customer, Discount, Code4DigitSalesman, Salesman
+from Tick_server.serializers import CustomerSerializer, DiscountSerializer, PollSerializer, UserSerializer, \
+    SalesmanSerializer
 
 
 # noinspection PyMethodMayBeStatic
@@ -53,13 +54,9 @@ class ResendCode(APIView):
 
 class SignUpFinal(APIView):
     def post(self, request, format = None):
-        # phone = request.data['phone_number']
         copy = request.data.copy()
         copy.update({'user_type': 'CU'})
-
         serializer = UserSerializer(data = copy)
-        # serializer = CustomerSerializer()
-
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -93,11 +90,109 @@ class Login(APIView):
             })
         login(request, customer[0].user)
         serializer = CustomerSerializer(customer[0])
-        json = serializer.data
         return Response({
             'result': True,
             'message': 'ورود با موفقیت انجام شد.',
-            'customer': json
+            'customer': serializer.data
+        })
+
+
+class SignUpFirstSalesman(APIView):
+    def post(self, request, format = None):
+        email = request.data['email']
+        password = request.data['password']
+        if Customer.objects.filter(user__email = email).count() == 1:
+            return Response({
+                'result': False,
+                'message': 'کاربری با این ایمیل قبلاً ثبت‌نام کرده.',
+            })
+        else:
+            Code4DigitSalesman.objects.update_or_create(email = email, password = password, defaults = {'code': '1111'})
+            return Response({
+                'result': True,
+                'message': 'اطلاعات با موفقیت ذخیره شد.',
+            })
+
+
+class SignUpSecondSalesman(APIView):
+    def post(self, request, format = None):
+        email = request.data['email']
+        code = request.data['code']
+        if Code4DigitSalesman.objects.filter(email = email, code = code).count() == 1:
+            return Response({
+                'result': True,
+                'message': 'ثبت‌نام با موفقیت انجام شد.',
+            })
+        else:
+            return Response({
+                'result': False,
+                'message': 'کد وارد شده صحیح نیست. لطفاً دوباره امتحان کنید.',
+            })
+
+
+class SignUpFinalSalesman(APIView):
+    def post(self, request, format = None):
+        copy = request.data.copy()
+        copy.update({'user_type': 'SM'})
+        print(copy)
+        serializer = UserSerializer(data = copy)
+        if not serializer.is_valid():
+            print(serializer.errors)
+            return Response({
+                'result': False,
+                'message': 'ثبت‌نام با خطا مواجه شد.',
+            })
+        else:
+            user = serializer.save()
+            Salesman.objects.create(user = user)
+            Code4DigitSalesman.objects.get(email = copy['email']).delete()
+            return Response({
+                'result': True,
+                'message': 'ثبت‌نام با موفقیت انجام شد.',
+            })
+
+
+class ResendCodeSalesman(APIView):
+    def post(self, request, format = None):
+        email = request.data['email']
+        Code4DigitSalesman.objects.filter(email = email).update(code = '1111')
+        return Response({
+            'result': True,
+            'message': 'کد مجدداً ارسال شد.',
+        })
+
+
+class LoginSalesman(APIView):
+    def post(self, request, format = None):
+        email_field = False
+        try:
+            email = request.data['email']
+            email_field = True
+        except KeyError:
+            username = request.data['username']
+
+        password = request.data['password']
+        if email_field:
+            salesman = Salesman.objects.filter(user__email = email)
+        else:
+            salesman = Salesman.objects.filter(user__username = username)
+
+        if salesman.count() == 0:
+            return Response({
+                'result': False,
+                'message': 'کاربری با این شماره یافت نشد.',
+            })
+        if not salesman[0].check_password(password):
+            return Response({
+                'result': False,
+                'message': 'رمز عبور اشتباه است.',
+            })
+        login(request, salesman[0].user)
+        serializer = SalesmanSerializer(salesman[0])
+        return Response({
+            'result': True,
+            'message': 'ورود با موفقیت انجام شد.',
+            'salesman': serializer.data
         })
 
 

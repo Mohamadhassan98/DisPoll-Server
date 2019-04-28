@@ -17,15 +17,21 @@ from django.contrib import admin
 from django.urls import path
 
 from Tick_server.views import SignUpFirst, SignUpSecond, ResendCode, Login, SignUpFinal, ActiveDiscountListView, \
-    InactiveDiscountListView
+    InactiveDiscountListView, SignUpFirstSalesman, SignUpSecondSalesman, ResendCodeSalesman, SignUpFinalSalesman, \
+    LoginSalesman
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('signup/phone-auth/', SignUpFirst.as_view(), name = 'signup_first'),
-    path('signup/confirm-phone/', SignUpSecond.as_view(), name = 'signup_second'),
-    path('signup/resend-code/', ResendCode.as_view(), name = 'resend_code'),
-    path('signup/complete-info/', SignUpFinal.as_view(), name = 'signup_final'),
-    path('login/', Login.as_view(), name = 'login'),
-    path('discounts/active/', ActiveDiscountListView.as_view(), name = 'active_discounts'),
-    path('discounts/inactive/', InactiveDiscountListView.as_view(), name = 'inactive_discounts')
+    path('signup-customer/phone-auth/', SignUpFirst.as_view()),
+    path('signup-customer/confirm-phone/', SignUpSecond.as_view()),
+    path('signup-customer/resend-code/', ResendCode.as_view()),
+    path('signup-customer/complete-info/', SignUpFinal.as_view()),
+    path('login-customer/', Login.as_view()),
+    path('signup-salesman/email-auth/', SignUpFirstSalesman.as_view()),
+    path('signup-salesman/confirm-email/', SignUpSecondSalesman.as_view()),
+    path('signup-salesman/resend-code/', ResendCodeSalesman.as_view()),
+    path('signup-salesman/complete-info/', SignUpFinalSalesman.as_view()),
+    path('login-salesman/', LoginSalesman.as_view()),
+    path('discounts/active/', ActiveDiscountListView.as_view()),
+    path('discounts/inactive/', InactiveDiscountListView.as_view())
 ]

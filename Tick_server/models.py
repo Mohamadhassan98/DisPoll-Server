@@ -137,6 +137,9 @@ class Salesman(models.Model):
     user = models.OneToOneField(CustomUser, on_delete = models.CASCADE)
     avatar = models.ImageField()
 
+    def check_password(self, raw_password):
+        return self.user.check_password(raw_password)
+
 
 class Branch(models.Model):
     name = models.CharField(max_length = 50)
@@ -155,3 +158,9 @@ class Discount(models.Model):
     product_barcode = models.ImageField(null = True)
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discount')
     shop = models.ForeignKey(Shop, on_delete = models.CASCADE, related_name = 'discount')
+
+
+class Code4DigitSalesman(models.Model):
+    email = models.EmailField()
+    code = models.CharField(max_length = 4)
+    password = models.CharField(max_length = 50)

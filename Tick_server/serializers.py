@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from Tick_server.models import Customer, Discount, Poll, CustomUser
+from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman
 
 
 # noinspection PyMethodMayBeStatic
@@ -51,18 +51,12 @@ class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = '__all__'
-        depth = 1
 
-    def create(self, validated_data):
-        validated_data.update({'user_type': 'CU'})
-        customer = \
-            {
-                'user': validated_data
-            }
-        serializer = UserSerializer(data = customer)
-        if serializer.is_valid(raise_exception = True):
-            user = serializer.save()
-            return Customer.objects.create(user = user)
+
+class SalesmanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Salesman
+        fields = '__all__'
 
 
 class DiscountSerializer(serializers.ModelSerializer):
