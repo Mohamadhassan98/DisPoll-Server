@@ -1,4 +1,4 @@
-from Tick_server.serializers import CustomerSerializer
+from Tick_server.serializers import CustomerSerializer, UserSerializer
 
 customer = \
     {
@@ -24,3 +24,37 @@ if __name__ == '__main__':
 
     a = A()
     print(json.dumps(a))
+
+c1 = \
+    {
+        'phone_number': '09130172688',
+        'username': 'mohamadhassan',
+        'password': '1234',
+        'user_type': 'CU',
+        'errors': '1234444'
+    }
+
+ser = UserSerializer(data = c1)
+ser.is_valid()
+
+c2 = \
+    {
+        'user':
+            {
+                'phone_number': '09130172688',
+                'username': 'mohamadhassan',
+                'password': '1234',
+                'user_type': 'CU'
+            }
+    }
+ser = CustomerSerializer(data = {})
+ser.is_valid()
+
+c3 = \
+    {
+        'phone_number': '09130172688',
+        'username': 'mohamadhassan',
+        'password': '1234'
+    }
+ser = CustomerSerializer(c3)
+ser.is_valid()

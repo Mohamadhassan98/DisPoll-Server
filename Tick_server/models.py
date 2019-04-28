@@ -69,7 +69,6 @@ class CustomUser(AbstractUser):
         ('SM', 'Salesman')
     )
     user_type = models.CharField(max_length = 2, choices = TYPES)
-    is_superuser = user_type == 'SU'
     birth_date = models.DateField(null = True, blank = True)
     GENDER = (
         ('m', 'Male'),
@@ -82,12 +81,15 @@ class CustomUser(AbstractUser):
 
 
 class Customer(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete = models.CASCADE)
+    user = models.OneToOneField(CustomUser, related_name = 'customer', on_delete = models.CASCADE)
     linear_scale_poll_answers = models.ManyToManyField(LinearScalePoll, through = 'LinearScalePollAnswer')
     paragraph_poll_answers = models.ManyToManyField(ParagraphPoll, through = 'ParagraphPollAnswer')
     checkbox_poll_answers = models.ManyToManyField(CheckBoxOption, through = 'CheckBoxPollAnswer')
     short_answer_poll_answers = models.ManyToManyField(ShortAnswerPoll, through = 'ShortAnswerPollAnswer')
     multiple_choice_poll_answers = models.ManyToManyField(MultipleChoiceOption, through = 'MultipleChoiceAnswer')
+
+    def check_password(self, raw_password):
+        return self.user.check_password(raw_password)
 
 
 class PollAnswer(models.Model):

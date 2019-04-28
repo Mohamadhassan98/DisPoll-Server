@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Tick_server.models import Code4Digit, Customer, Discount
-from Tick_server.serializers import CustomerSerializer, DiscountSerializer, PollSerializer
+from Tick_server.serializers import CustomerSerializer, DiscountSerializer, PollSerializer, UserSerializer
 
 
 # noinspection PyMethodMayBeStatic
@@ -11,13 +11,13 @@ class SignUpFirst(APIView):
     def post(self, request, format = None):
         phone = request.data['phone_number']
         # serializer = CustomerSerializer(data = request.data)
-        if Customer.objects.filter(phone_number = phone).count() == 1:
+        if Customer.objects.filter(user__phone_number = phone).count() == 1:
             return Response({
                 'result': False,
                 'message': 'کاربری با این شماره تلفن قبلاً ثبت‌نام کرده.',
             })
         else:
-            Code4Digit.objects.update_or_create(phone_number = phone, defaults = { 'code': '1111' })
+            Code4Digit.objects.update_or_create(phone_number = phone, defaults = {'code': '1111'})
             return Response({
                 'result': True,
                 'message': 'شماره تلفن با موفقیت ثبت شد.',
@@ -53,7 +53,13 @@ class ResendCode(APIView):
 
 class SignUpFinal(APIView):
     def post(self, request, format = None):
-        serializer = CustomerSerializer(data = request.data)
+        # phone = request.data['phone_number']
+        copy = request.data.copy()
+        copy.update({'user_type': 'CU'})
+
+        serializer = UserSerializer(data = copy)
+        # serializer = CustomerSerializer()
+
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -61,8 +67,9 @@ class SignUpFinal(APIView):
                 'message': 'ثبت‌نام با خطا مواجه شد.',
             })
         else:
-            serializer.save()
-            Code4Digit.objects.get(phone_number = request.data['phone_number']).delete()
+            user = serializer.save()
+            Customer.objects.create(user = user)
+            Code4Digit.objects.get(phone_number = copy['phone_number']).delete()
             return Response({
                 'result': True,
                 'message': 'ثبت‌نام با موفقیت انجام شد.',
@@ -73,18 +80,18 @@ class Login(APIView):
     def post(self, request, format = None):
         phone = request.data['phone_number']
         password = request.data['password']
-        customer = Customer.objects.filter(phone_number = phone)
+        customer = Customer.objects.filter(user__phone_number = phone)
         if customer.count() == 0:
             return Response({
                 'result': False,
                 'message': 'کاربری با این شماره یافت نشد.',
             })
-        if not customer.first().check_password(password):
+        if not customer[0].check_password(password):
             return Response({
                 'result': False,
                 'message': 'رمز عبور اشتباه است.',
             })
-        login(request, customer.first())
+        login(request, customer[0].user)
         serializer = CustomerSerializer(customer[0])
         json = serializer.data
         return Response({
