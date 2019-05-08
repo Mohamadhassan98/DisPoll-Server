@@ -89,11 +89,11 @@ class Login(APIView):
                 'message': 'رمز عبور اشتباه است.',
             })
         login(request, customer[0].user)
-        serializer = CustomerSerializer(customer[0])
+        serializer = UserSerializer(customer[0].user)
         return Response({
             'result': True,
             'message': 'ورود با موفقیت انجام شد.',
-            'customer': serializer.data
+            'customer_info': serializer.data
         })
 
 
