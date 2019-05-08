@@ -2,9 +2,9 @@ from django.contrib.auth import login
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from Tick_server.models import Code4Digit, Customer, Discount, Code4DigitSalesman, Salesman
+from Tick_server.models import Code4Digit, Customer, Discount, Code4DigitSalesman, Salesman, Shop
 from Tick_server.serializers import CustomerSerializer, DiscountSerializer, PollSerializer, UserSerializer, \
-    SalesmanSerializer
+    SalesmanSerializer, ShopSerializer
 
 
 # noinspection PyMethodMayBeStatic
@@ -196,6 +196,55 @@ class LoginSalesman(APIView):
         })
 
 
+class AddShop(APIView):
+    def post(self, request, format=None):
+        serializer = ShopSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                'result': False,
+                'message': 'اضافه کردن فروشگاه با خطا مواجه شد.'
+            })
+        else:
+            serializer.save()
+            return Response({
+                'result': True,
+                'message': 'اضافه کردن فروشگاه با موفقیت انجام شد.'
+            })
+
+
+class AddDiscount(APIView):
+    def post(self, request, format=None):
+        serializer = DiscountSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                'result': False,
+                'message': 'اضافه کردن تخفیف با خطا مواجه شد.'
+            })
+        else:
+            serializer.save()
+            return Response({
+                'result': True,
+                'message':'اضافه کردن تخفیف با موفقیت انجام شد.'
+            })
+
+
+
+class AddPoll(APIView):
+    def post(self, request, format=None):
+        serializer = PollSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                'result': False,
+                'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+            })
+        else:
+            return Response({
+                'result': True,
+                'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
+            })
+
+
+
 class ActiveDiscountListView(APIView):
     def post(self, request, Format = None):
         page = request.data['page']
@@ -224,6 +273,37 @@ class InactiveDiscountListView(APIView):
             'message': 'جستجو با موفقیت انجام شد.',
             'discounts': serializer.data
         })
+
+
+class ActiveDiscountListViewSalesman(APIView):
+    def post(self, request, Format = None):
+        page = request.data['page']
+        offset = request.data['offset']
+        email = request.data['email']
+        discounts = Discount.objects.filter(active = True, salesman = Salesman.objects.get(email = email))[
+                    page - 1 * offset: page * offset]
+        serializer = DiscountSerializer(discounts, many = True)
+        return Response({
+            'result': True,
+            'message': 'جستجو با موفقیت انجام شد.',
+            'discounts': serializer.data
+        })
+
+
+class InactiveDiscountListViewSalesman(APIView):
+    def post(self, request, Format = None):
+        page = request.data['page']
+        offset = request.data['offset']
+        email = request.data['email']
+        discounts = Discount.objects.filter(active = False, salesman = Salesman.objects.get(email = email))[
+                    page - 1 * offset: page * offset]
+        serializer = DiscountSerializer(discounts, many = True)
+        return Response({
+            'result': True,
+            'message': 'جستجو با موفقیت انجام شد.',
+            'discounts': serializer.data
+        })
+
 
 
 class NotCompletedPollList(APIView):

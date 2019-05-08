@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman
+from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, Shop
 
 
 # noinspection PyMethodMayBeStatic
@@ -69,4 +69,10 @@ class DiscountSerializer(serializers.ModelSerializer):
 class PollSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poll
+        fields = '__all__'
+
+
+class ShopSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shop
         fields = '__all__'

@@ -3,17 +3,53 @@ from django.db import models
 from django.utils import timezone
 
 
+class City(models.Model):
+    name = models.CharField(max_length = 50)
+
+
+
+class CustomUser(AbstractUser):
+    TYPES = (
+        ('SU', 'Super User'),
+        ('CU', 'Customer'),
+        ('SM', 'Salesman')
+    )
+    user_type = models.CharField(max_length = 2, choices = TYPES)
+    birth_date = models.DateField(null = True, blank = True)
+    GENDER = (
+        ('m', 'Male'),
+        ('f', 'Female')
+    )
+    gender = models.CharField(max_length = 1, choices = GENDER, null = True, blank = True)
+    location = models.CharField(max_length = 100, null = True, blank = True)
+    phone_number = models.CharField(max_length = 13, unique = True)
+    city = models.ForeignKey(City, on_delete = models.CASCADE, null = True, blank = True)
+
+
+
+class Salesman(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete = models.CASCADE)
+    avatar = models.ImageField()
+
+    def check_password(self, raw_password):
+        return self.user.check_password(raw_password)
+
+
+
 class ShopKind(models.Model):
     name = models.CharField(max_length = 50)
 
+    
 
 class Shop(models.Model):
-    address = models.TextField(blank = True)
-    business_license = models.ImageField(blank = True)
-    location = models.CharField(max_length = 50)
+    salesman = models.ForeignKey(Salesman, on_delete=models.CASCADE, null=True)
+    address = models.TextField()
+    city = models.ForeignKey(City, on_delete = models.CASCADE, null=True)
+    business_license = models.ImageField(null=True, blank = True)
+    location = models.CharField(max_length = 50, blank=True, null=True)
     name = models.CharField(max_length = 50)
-    shop_kind = models.ManyToManyField(ShopKind, related_name = 'shop')
-    picture = models.ImageField(blank = True)
+    shop_kind = models.ForeignKey(ShopKind, on_delete=models.CASCADE, null=True)
+    picture = models.ImageField(blank = True, null=True)
 
 
 class Poll(models.Model):
@@ -25,9 +61,6 @@ class Poll(models.Model):
     class Meta:
         abstract = True
 
-
-class City(models.Model):
-    name = models.CharField(max_length = 50)
 
 
 class ParagraphPoll(Poll):
@@ -61,23 +94,6 @@ class CheckBoxOption(models.Model):
 class ShortAnswerPoll(Poll):
     pass
 
-
-class CustomUser(AbstractUser):
-    TYPES = (
-        ('SU', 'Super User'),
-        ('CU', 'Customer'),
-        ('SM', 'Salesman')
-    )
-    user_type = models.CharField(max_length = 2, choices = TYPES)
-    birth_date = models.DateField(null = True, blank = True)
-    GENDER = (
-        ('m', 'Male'),
-        ('f', 'Female')
-    )
-    gender = models.CharField(max_length = 1, choices = GENDER, null = True, blank = True)
-    location = models.CharField(max_length = 100, null = True, blank = True)
-    phone_number = models.CharField(max_length = 13, unique = True)
-    city = models.ForeignKey(City, on_delete = models.CASCADE, null = True, blank = True)
 
 
 class Customer(models.Model):
@@ -133,12 +149,6 @@ class Code4Digit(models.Model):
     code = models.CharField(max_length = 4)
 
 
-class Salesman(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete = models.CASCADE)
-    avatar = models.ImageField()
-
-    def check_password(self, raw_password):
-        return self.user.check_password(raw_password)
 
 
 class Branch(models.Model):
