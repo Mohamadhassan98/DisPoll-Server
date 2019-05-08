@@ -166,7 +166,7 @@ class Discount(models.Model):
     product_id = models.CharField(max_length = 50, null = True)
     product_name = models.CharField(max_length = 50, null = True)
     product_barcode = models.ImageField(null = True)
-    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discount')
+    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discount', null=True)
     shop = models.ForeignKey(Shop, on_delete = models.CASCADE, related_name = 'discount')
 
 

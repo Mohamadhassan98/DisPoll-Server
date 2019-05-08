@@ -2,7 +2,7 @@ from django.contrib.auth import login
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from Tick_server.models import Code4Digit, Customer, Discount, Code4DigitSalesman, Salesman, Shop
+from Tick_server.models import Code4Digit, Customer, Discount, Code4DigitSalesman, Salesman, Shop, CustomUser
 from Tick_server.serializers import CustomerSerializer, DiscountSerializer, PollSerializer, UserSerializer, \
     SalesmanSerializer, ShopSerializer
 
@@ -205,23 +205,28 @@ class AddShop(APIView):
                 'message': 'اضافه کردن فروشگاه با خطا مواجه شد.'
             })
         else:
-            serializer.save()
+            shop = serializer.save()
+            print(shop)
             return Response({
                 'result': True,
-                'message': 'اضافه کردن فروشگاه با موفقیت انجام شد.'
+                'message': 'اضافه کردن فروشگاه با موفقیت انجام شد.',
+                'shop_id': shop.id
             })
 
 
 class AddDiscount(APIView):
     def post(self, request, format=None):
         serializer = DiscountSerializer(data=request.data)
+
         if not serializer.is_valid():
+            print(serializer.errors)
             return Response({
                 'result': False,
                 'message': 'اضافه کردن تخفیف با خطا مواجه شد.'
             })
         else:
-            serializer.save()
+            discount = serializer.save()
+
             return Response({
                 'result': True,
                 'message':'اضافه کردن تخفیف با موفقیت انجام شد.'
@@ -247,11 +252,12 @@ class AddPoll(APIView):
 
 class ActiveDiscountListView(APIView):
     def post(self, request, Format = None):
-        page = request.data['page']
-        offset = request.data['offset']
+        page = int(request.data['page'])
+        offset = int(request.data['offset'])
         phone = request.data['phone_number']
-        discounts = Discount.objects.filter(active = True, customer = Customer.objects.get(phone_number = phone))[
-                    page - 1 * offset: page * offset]
+        user = CustomUser.objects.get(phone_number=phone)
+        discounts = Discount.objects.filter(active = True, customer = Customer.objects.get(user = user))[
+                    page * offset: page * offset + offset]
         serializer = DiscountSerializer(discounts, many = True)
         return Response({
             'result': True,
@@ -327,9 +333,29 @@ class NotCompletedPollList(APIView):
             'polls': serializer.data
         })
 
-
+#not completed
 class CompletePoll(APIView):
     def post(self, request, Format = None):
         poll_id = request.data['poll_id']
         username = request.data['username']
         poll_type = request.data['poll_type']
+
+
+class getShops(APIView):
+    def post(self, request, Format=None):
+        username = request.data['username']
+
+#TODO program a view that returns all discounts of a salesman
+#TODO program a view that allocates a discount to a customer from an specified shop's null customered discounts
+class DiscountToCustomer(APIView):
+    def post(self, request, Format=None):
+        discount_id = request.data['discount_id']
+        discount = Discount.objects.filter(id=discount_id)
+        username = request.data['username']
+        user = CustomUser.objects.get(username=username)
+        customer = Customer.objects.get(user=user)
+        discount.update(customer=customer)
+        return Response({ 
+            'result': True,
+            'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.'
+        })

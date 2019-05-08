@@ -18,7 +18,7 @@ from django.urls import path
 
 from Tick_server.views import SignUpFirst, SignUpSecond, ResendCode, Login, SignUpFinal, ActiveDiscountListView, \
     InactiveDiscountListView, SignUpFirstSalesman, SignUpSecondSalesman, ResendCodeSalesman, SignUpFinalSalesman, \
-    LoginSalesman, AddShop
+    LoginSalesman, AddShop, AddDiscount, DiscountToCustomer
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -35,4 +35,6 @@ urlpatterns = [
     path('discounts/active/', ActiveDiscountListView.as_view()),
     path('discounts/inactive/', InactiveDiscountListView.as_view()),
     path('add-shop/', AddShop.as_view()),
+    path('add-discount/', AddDiscount.as_view()),
+    path('discount-to-customer/',DiscountToCustomer.as_view())
 ]
