@@ -58,6 +58,7 @@ class SalesmanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salesman
         fields = '__all__'
+        depth = 1
 
 
 class DiscountSerializer(serializers.ModelSerializer):
