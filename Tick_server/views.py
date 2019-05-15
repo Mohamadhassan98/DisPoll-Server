@@ -376,11 +376,31 @@ class DiscountToCustomer(APIView):
         my_discounts = None
         if 50 <= poll_count:
             my_discounts = discounts.filter(percent__lte = 100, percent__gt = 90)
-        elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() ==0):
-
-
-        # discount = Discount.objects.filter(id = discount_id)
-        # discount.update(customer = customer)
+        elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 90, percent__gt = 80)
+        elif 40 <= poll_count < 45 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 80, percent__gt = 70)
+        elif 35 <= poll_count < 40 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 70, percent__gt = 60)
+        elif 30 <= poll_count < 35 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 60, percent__gt = 50)
+        elif 25 <= poll_count < 30 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 50, percent__gt = 40)
+        elif 20 <= poll_count < 25 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 40, percent__gt = 30)
+        elif 15 <= poll_count < 20 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 30, percent__gt = 20)
+        elif 10 <= poll_count < 15 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 20, percent__gt = 10)
+        elif poll_count < 10 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 10)
+        else:
+            return Response({
+                'result': False,
+                'message': 'تخفیفی برای این فروشگاه یافت نشد.'
+            })
+        import random
+        discount = random.sample(my_discounts, 1)[0]
         return Response({
             'result': True,
             'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.'
