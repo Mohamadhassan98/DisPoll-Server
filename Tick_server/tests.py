@@ -58,3 +58,8 @@ c3 = \
     }
 ser = CustomerSerializer(c3)
 ser.is_valid()
+
+from Tick_server.models import CustomUser
+
+user = CustomUser.objects.create(user_type = 'CU', phone_number = '09130172688', username = 'mohamadhassan',
+                                 password = '12345')

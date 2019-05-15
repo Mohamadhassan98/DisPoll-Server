@@ -7,7 +7,6 @@ class City(models.Model):
     name = models.CharField(max_length = 50)
 
 
-
 class CustomUser(AbstractUser):
     TYPES = (
         ('SU', 'Super User'),
@@ -26,7 +25,6 @@ class CustomUser(AbstractUser):
     city = models.ForeignKey(City, on_delete = models.CASCADE, null = True, blank = True)
 
 
-
 class Salesman(models.Model):
     user = models.OneToOneField(CustomUser, on_delete = models.CASCADE)
     avatar = models.ImageField()
@@ -35,32 +33,41 @@ class Salesman(models.Model):
         return self.user.check_password(raw_password)
 
 
-
 class ShopKind(models.Model):
     name = models.CharField(max_length = 50)
 
-    
 
 class Shop(models.Model):
-    salesman = models.ForeignKey(Salesman, on_delete=models.CASCADE, null=True)
+    salesman = models.ForeignKey(Salesman, on_delete = models.CASCADE, null = True)
     address = models.TextField()
-    city = models.ForeignKey(City, on_delete = models.CASCADE, null=True)
-    business_license = models.ImageField(null=True, blank = True)
-    location = models.CharField(max_length = 50, blank=True, null=True)
+    city = models.ForeignKey(City, on_delete = models.CASCADE, null = True)
+    business_license = models.ImageField(null = True, blank = True)
+    location = models.CharField(max_length = 50, blank = True, null = True)
     name = models.CharField(max_length = 50)
-    shop_kind = models.ForeignKey(ShopKind, on_delete=models.CASCADE, null=True)
-    picture = models.ImageField(blank = True, null=True)
+    shop_kind = models.ForeignKey(ShopKind, on_delete = models.CASCADE, null = True)  # NOT NULL
+    picture = models.ImageField(blank = True, null = True)
 
 
 class Poll(models.Model):
-    importance = models.IntegerField()
+    IMPORTANCES = (
+        (1, 1),
+        (2, 2),
+        (3, 3),
+        (4, 4),
+        (5, 5),
+        (6, 6),
+        (7, 7),
+        (8, 8),
+        (9, 9),
+        (10, 10)
+    )
+    importance = models.IntegerField(choices = IMPORTANCES)
     remaining_time = models.DateTimeField()
     text = models.TextField()
     shop = models.ForeignKey(Shop, on_delete = models.CASCADE)
 
     class Meta:
         abstract = True
-
 
 
 class ParagraphPoll(Poll):
@@ -93,7 +100,6 @@ class CheckBoxOption(models.Model):
 
 class ShortAnswerPoll(Poll):
     pass
-
 
 
 class Customer(models.Model):
@@ -149,25 +155,29 @@ class Code4Digit(models.Model):
     code = models.CharField(max_length = 4)
 
 
-
-
 class Branch(models.Model):
     name = models.CharField(max_length = 50)
     shop = models.ForeignKey(Shop, on_delete = models.CASCADE)
 
 
-class Discount(models.Model):
-    active = models.BooleanField(default = False)
-    code = models.CharField(max_length = 5)
+class CandidateProduct(models.Model):
     description = models.TextField(blank = True)
-    expire_date = models.DateField(default = timezone.now)
-    percent = models.IntegerField(default = 5)
+    percent = models.CharField(max_length = 3)
+    count = models.CharField(max_length = 5)
     product_brand = models.CharField(max_length = 50, null = True)
     product_id = models.CharField(max_length = 50, null = True)
     product_name = models.CharField(max_length = 50, null = True)
     product_barcode = models.ImageField(null = True)
-    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discount', null=True)
     shop = models.ForeignKey(Shop, on_delete = models.CASCADE, related_name = 'discount')
+    expire_date = models.CharField(max_length = 5)
+
+
+class Discount(models.Model):
+    active = models.BooleanField(default = False)
+    code = models.CharField(max_length = 5, unique = True)
+    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discount', null = True)
+    expire_date = models.DateField(default = timezone.now)
+    candidate_product = models.ForeignKey(CandidateProduct, on_delete = models.CASCADE, related_name = 'discount')
 
 
 class Code4DigitSalesman(models.Model):

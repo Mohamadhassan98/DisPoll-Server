@@ -36,5 +36,5 @@ urlpatterns = [
     path('discounts/inactive/', InactiveDiscountListView.as_view()),
     path('add-shop/', AddShop.as_view()),
     path('add-discount/', AddDiscount.as_view()),
-    path('discount-to-customer/',DiscountToCustomer.as_view())
+    path('discount-to-customer/', DiscountToCustomer.as_view())
 ]

@@ -1,36 +1,8 @@
 from rest_framework import serializers
 
-from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, Shop
+from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, Shop, CandidateProduct
 
 
-# noinspection PyMethodMayBeStatic
-# class UserSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = CustomUser
-#         exclude = ('customer', 'salesman')
-#
-#     def create(self, validated_data):
-#         username = validated_data.pop('username')
-#         password = validated_data.pop('password')
-#         CustomUser.objects.create_user(username = username, password = password, **validated_data)
-#         return CustomUser.objects.get(username = username)
-#
-#
-# class CustomerSerializer(serializers.ModelSerializer):
-#     user = UserSerializer(many = False)
-#
-#     class Meta:
-#         model = Customer
-#         fields = '__all__'
-#
-#     def create(self, validated_data):
-#         validated_data.update({'user_type': 'CU'})
-#         self.user.validate(validated_data)
-#         if self.user.is_valid():
-#             user = self.user.save()
-#             customer = Customer.objects.create(user = user)
-#             return customer
-#
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
@@ -76,4 +48,10 @@ class PollSerializer(serializers.ModelSerializer):
 class ShopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shop
+        fields = '__all__'
+
+
+class CandidateProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CandidateProduct
         fields = '__all__'
