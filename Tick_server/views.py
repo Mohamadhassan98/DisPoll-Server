@@ -8,7 +8,8 @@ from django.http import FileResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from Tick_server.models import Code4Digit, Customer, Discount, Code4DigitSalesman, Salesman, CustomUser, Shop
+from Tick_server.models import Code4Digit, Customer, Discount, Code4DigitSalesman, Salesman, CustomUser, Shop, \
+    CandidateProduct
 from Tick_server.serializers import DiscountSerializer, PollSerializer, UserSerializer, \
     SalesmanSerializer, ShopSerializer, CandidateProductSerializer
 
@@ -282,14 +283,21 @@ class AddShop(APIView):
 
 
 class AddDiscount(APIView):
-
     def post(self, request) -> Response:
         """
         Adds discount by number of count.
         @param request: containing discount information and count of discount to add
         @return: Response showing whether adding discount is successful or not
         """
-        serializer = CandidateProductSerializer(data = request.data)
+        copy = request.data.copy()
+        count = int(copy.pop('count')[0])
+        print(type(count))
+        percent = int(copy.pop('percent')[0])
+        exp = int(copy.pop('expire_date')[0])
+        copy.update({'count': count})
+        copy.update({'percent': percent})
+        copy.update({'expire_date': exp})
+        serializer = CandidateProductSerializer(data = copy)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -298,7 +306,7 @@ class AddDiscount(APIView):
             })
         else:
             c_product = serializer.save()
-            for i in range(int(request.data['count'])):
+            for i in range(copy['count']):
                 while True:
                     code = ''.join(random.choices(string.ascii_uppercase + string.digits, k = 6))
                     if Discount.objects.filter(code = code).count() == 0:
@@ -364,11 +372,15 @@ class DiscountToCustomer(APIView):
         poll_count += customer.checkbox_poll_answers.filter(shop = shop).count()
         poll_count += customer.multiple_choice_poll_answers.filter(shop = shop).count()
         poll_count += customer.paragraph_poll_answers.filter(shop = shop).count()
-        if 0 <= poll_count <= 5:
+        discounts = CandidateProduct.objects.filter(shop = shop, count__gt = 0)
+        my_discounts = None
+        if 50 <= poll_count:
+            my_discounts = discounts.filter(percent__lte = 100, percent__gt = 90)
+        elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() ==0):
 
 
-        discount = Discount.objects.filter(id = discount_id)
-        discount.update(customer = customer)
+        # discount = Discount.objects.filter(id = discount_id)
+        # discount.update(customer = customer)
         return Response({
             'result': True,
             'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.'

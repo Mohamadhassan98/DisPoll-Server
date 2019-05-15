@@ -162,14 +162,14 @@ class Branch(models.Model):
 
 class CandidateProduct(models.Model):
     description = models.TextField(blank = True)
-    percent = models.CharField(max_length = 3)
-    count = models.CharField(max_length = 5)
+    percent = models.IntegerField(default = 5)
+    count = models.IntegerField(default = 5)
     product_brand = models.CharField(max_length = 50, null = True)
     product_id = models.CharField(max_length = 50, null = True)
     product_name = models.CharField(max_length = 50, null = True)
     product_barcode = models.ImageField(null = True)
     shop = models.ForeignKey(Shop, on_delete = models.CASCADE, related_name = 'discount')
-    expire_date = models.CharField(max_length = 5)
+    expire_date = models.IntegerField(default = 5)
 
 
 class Discount(models.Model):
