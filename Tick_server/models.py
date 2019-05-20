@@ -49,7 +49,7 @@ class Shop(models.Model):
 
 
 class Poll(models.Model):
-    IMPORTANCES = (
+    IMPORTANCE = (
         (1, 1),
         (2, 2),
         (3, 3),
@@ -61,7 +61,7 @@ class Poll(models.Model):
         (9, 9),
         (10, 10)
     )
-    importance = models.IntegerField(choices = IMPORTANCES)
+    importance = models.IntegerField(choices = IMPORTANCE)
     remaining_time = models.DateTimeField()
     text = models.TextField()
     shop = models.ForeignKey(Shop, on_delete = models.CASCADE)

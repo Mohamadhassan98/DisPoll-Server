@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, Shop, CandidateProduct
+from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, Shop, CandidateProduct, ShopKind, City
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -54,4 +54,16 @@ class ShopSerializer(serializers.ModelSerializer):
 class CandidateProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateProduct
+        fields = '__all__'
+
+
+class ShopKindSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShopKind
+        fields = '__all__'
+
+
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
         fields = '__all__'

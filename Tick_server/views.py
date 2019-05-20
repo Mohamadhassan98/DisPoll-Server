@@ -9,21 +9,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Tick_server.models import Code4Digit, Customer, Discount, Code4DigitSalesman, Salesman, CustomUser, Shop, \
-    CandidateProduct
+    CandidateProduct, City, ShopKind
 from Tick_server.serializers import DiscountSerializer, PollSerializer, UserSerializer, \
-    SalesmanSerializer, ShopSerializer, CandidateProductSerializer
+    SalesmanSerializer, ShopSerializer, CandidateProductSerializer, ShopKindSerializer, CitySerializer
 
 
-# noinspection PyMethodMayBeStatic,PyUnusedLocal,PyShadowingBuiltins
+# noinspection PyMethodMayBeStatic
 class SignUpFirst(APIView):
-    """
-
-    """
-
     def post(self, request) -> Response:
         """
-        Gets and saves new customers phone number
-        @param request: includes phone number only
+        Gets and saves new customers I{phone_number}
+        @param request: includes I{phone_number} only
         @return: Response showing whether saving phone number was successful or not.
         """
         phone = request.data['phone_number']
@@ -62,6 +58,7 @@ class SignUpSecond(APIView):
             })
 
 
+# noinspection PyMethodMayBeStatic
 class ResendCode(APIView):
     def post(self, request) -> Response:
         """
@@ -77,6 +74,7 @@ class ResendCode(APIView):
         })
 
 
+# noinspection PyMethodMayBeStatic
 class SignUpFinal(APIView):
     def post(self, request) -> Response:
         """
@@ -103,6 +101,7 @@ class SignUpFinal(APIView):
             })
 
 
+# noinspection PyMethodMayBeStatic
 class Login(APIView):
     def post(self, request) -> Response:
         """
@@ -133,6 +132,7 @@ class Login(APIView):
         })
 
 
+# noinspection PyMethodMayBeStatic
 class SignUpFirstSalesman(APIView):
     def post(self, request) -> Response:
         """
@@ -155,6 +155,7 @@ class SignUpFirstSalesman(APIView):
             })
 
 
+# noinspection PyMethodMayBeStatic
 class SignUpSecondSalesman(APIView):
     def post(self, request) -> Response:
         """
@@ -176,6 +177,7 @@ class SignUpSecondSalesman(APIView):
             })
 
 
+# noinspection PyMethodMayBeStatic
 class SignUpFinalSalesman(APIView):
     def post(self, request) -> Response:
         """
@@ -202,6 +204,7 @@ class SignUpFinalSalesman(APIView):
             })
 
 
+# noinspection PyMethodMayBeStatic
 class ResendCodeSalesman(APIView):
     def post(self, request) -> Response:
         """
@@ -217,6 +220,7 @@ class ResendCodeSalesman(APIView):
         })
 
 
+# noinspection PyMethodMayBeStatic
 class LoginSalesman(APIView):
     def post(self, request) -> Response:
         """
@@ -257,6 +261,7 @@ class LoginSalesman(APIView):
         })
 
 
+# noinspection PyMethodMayBeStatic
 class AddShop(APIView):
     def post(self, request) -> Response:
         """
@@ -282,6 +287,7 @@ class AddShop(APIView):
             })
 
 
+# noinspection PyMethodMayBeStatic
 class AddDiscount(APIView):
     def post(self, request) -> Response:
         """
@@ -318,6 +324,7 @@ class AddDiscount(APIView):
             })
 
 
+# noinspection PyMethodMayBeStatic
 class ActiveDiscountListView(APIView):
     def post(self, request) -> Response:
         """
@@ -339,6 +346,7 @@ class ActiveDiscountListView(APIView):
         })
 
 
+# noinspection PyMethodMayBeStatic
 class InactiveDiscountListView(APIView):
     def post(self, request) -> Response:
         """
@@ -360,10 +368,61 @@ class InactiveDiscountListView(APIView):
         })
 
 
+# noinspection PyMethodMayBeStatic
+class GetCity(APIView):
+    def get(self, pk) -> Response:
+        """
+        Returns city corresponding requested I{id}.
+        @param pk: id for requested city
+        @return: Response showing whether city was found or not. If city was found, it will be returned respectively.
+        """
+        try:
+            city = City.objects.get(id = pk)
+            serializer = CitySerializer(city)
+        except City.DoesNotExist:
+            return Response({
+                'result': False,
+                'message': 'شهر مورد نظر یافت نشد.'
+            })
+        return Response({
+            'result': True,
+            'message': serializer.data
+        })
+
+
+# noinspection PyMethodMayBeStatic,PyUnusedLocal
+class GetShopKind(APIView):
+    def get(self, request, pk) -> Response:
+        """
+        Returns ShopKind corresponding requested I{id}.
+        @param request: Unused
+        @param pk: id for requested ShopKind
+        @return: Response showing whether ShopKind was found or not. If ShopKind was found, it will be returned
+        respectively.
+        """
+        try:
+            shop_kind = ShopKind.objects.get(id = pk)
+            serializer = ShopKindSerializer(shop_kind)
+        except ShopKind.DoesNotExist:
+            return Response({
+                'result': False,
+                'message': 'نوع فروشگاه مورد نظر یافت نشد.'
+            })
+        return Response({
+            'result': True,
+            'message': serializer.data
+        })
+
+
 # TODO program a view that returns all discounts of a salesman
 # TODO program a view that allocates a discount to a customer from an specified shop's null customered discounts
 class DiscountToCustomer(APIView):
-    def post(self, request, Format = None):
+    def post(self, request) -> Response:
+        """
+        TODO
+        :param request:
+        :return:
+        """
         username = request.data['username']
         customer = Customer.objects.get(user__username = username)
         shop = Shop.objects.get(id = request.data['shop_id'])
@@ -400,7 +459,9 @@ class DiscountToCustomer(APIView):
                 'message': 'تخفیفی برای این فروشگاه یافت نشد.'
             })
         import random
-        discount = random.sample(my_discounts, 1)[0]
+        product = random.sample(my_discounts, 1)[0]
+        discount = Discount.objects.filter(candidate_product = product, customer__isnull = True)[0]
+        discount.update(customer = customer, active = True)
         return Response({
             'result': True,
             'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.'
