@@ -27,7 +27,7 @@ class CustomUser(AbstractUser):
 
 class Salesman(models.Model):
     user = models.OneToOneField(CustomUser, on_delete = models.CASCADE)
-    avatar = models.ImageField()
+    avatar = models.ImageField(null=True)
 
     def check_password(self, raw_password):
         return self.user.check_password(raw_password)

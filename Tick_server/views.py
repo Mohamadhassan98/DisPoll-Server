@@ -207,14 +207,15 @@ class SignUpFinalSalesman(APIView):
         @param request: includes email and all necessary information to create new user
         @return: Response showing whether sign up is successful or not
         """
-        print(request.data)
-        avatar = request.data.pop('avatar')
-        file = avatar[0]
-        filename = 'SM_' + request.data['username'] + '.jpg'
-        with default_storage.open('tmp/' + filename, 'wb') as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
-            destination.close()
+        # print(request.data)
+        if 'avatar' in request.data:
+            avatar = request.data.pop('avatar')
+            file = avatar[0]
+            filename = 'SM_' + request.data['username'] + '.jpg'
+            with default_storage.open('tmp/' + filename, 'wb') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
+                destination.close()
         copy = request.data.copy()
         copy.update({'user_type': 'SM'})
         serializer = UserSerializer(data = copy)
@@ -225,10 +226,13 @@ class SignUpFinalSalesman(APIView):
                 'message': 'ثبت‌نام با خطا مواجه شد.'
             })
         user = serializer.save()  # TODO('Wrong logic')
-        serializer = SalesmanSerializer(data = {
-            'user': user.pk,
-            'avatar': default_storage.open('tmp/' + filename, 'rb')
-        })
+        data = {
+            'user': user.pk
+        }
+        if 'avatar' in request.data:
+            data.update({'avatar': default_storage.open('tmp/' + filename, 'rb')})
+        serializer = SalesmanSerializer(data = data)
+        print(serializer.initial_data)
         if serializer.is_valid():
             serializer.save()
             Code4DigitSalesman.objects.get(email = copy['email']).delete()
