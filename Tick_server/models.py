@@ -22,7 +22,7 @@ class CustomUser(AbstractUser):
     gender = models.CharField(max_length = 1, choices = GENDER, null = True, blank = True)
     location = models.CharField(max_length = 100, null = True, blank = True)
     phone_number = models.CharField(max_length = 13, unique = True)
-    city = models.ForeignKey(City, on_delete = models.CASCADE, null = True, blank = True)
+    city = models.ForeignKey(City, on_delete = models.CASCADE, null = True, blank = True)  # Not Null
 
 
 class Salesman(models.Model):
@@ -43,6 +43,7 @@ class Shop(models.Model):
     city = models.ForeignKey(City, on_delete = models.CASCADE, null = True)
     business_license = models.ImageField(null = True, blank = True)
     location = models.CharField(max_length = 50, blank = True, null = True)
+    # phone_number = models.CharField(max_length = 11)
     name = models.CharField(max_length = 50)
     shop_kind = models.ForeignKey(ShopKind, on_delete = models.CASCADE, null = True)  # NOT NULL
     picture = models.ImageField(blank = True, null = True)

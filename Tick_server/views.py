@@ -133,6 +133,28 @@ class Login(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+class EditCustomerProfile(APIView):
+    def put(self, request, pk) -> Response:
+        customer = Customer.objects.get(pk = pk)
+        copy = request.data.copy()
+        copy.update({'user_type': 'CU'})
+        serializer = UserSerializer(customer.user, data = copy)
+        if not serializer.is_valid():
+            print(serializer.errors)
+            return Response({
+                'result': False,
+                'message': 'ویرایش اطلاعات با خطا مواجه شد.'
+            })
+        else:
+            serializer.save()
+            return Response({
+                'result': True,
+                'message': 'ویرایش اطلاعات با موفقیت انجام شد.',
+                'salesman': serializer.data
+            })
+
+
+# noinspection PyMethodMayBeStatic
 class SignUpFirstSalesman(APIView):
     def post(self, request) -> Response:
         """
@@ -142,7 +164,7 @@ class SignUpFirstSalesman(APIView):
         """
         email = request.data['email']
         password = request.data['password']
-        if Customer.objects.filter(user__email = email).count() == 1:
+        if Salesman.objects.filter(user__email = email).count() == 1:
             return Response({
                 'result': False,
                 'message': 'کاربری با این ایمیل قبلاً ثبت‌نام کرده.',
@@ -185,6 +207,14 @@ class SignUpFinalSalesman(APIView):
         @param request: includes email and all necessary information to create new user
         @return: Response showing whether sign up is successful or not
         """
+        print(request.data)
+        avatar = request.data.pop('avatar')
+        file = avatar[0]
+        filename = 'SM_' + request.data['username'] + '.jpg'
+        with default_storage.open('tmp/' + filename, 'wb') as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+            destination.close()
         copy = request.data.copy()
         copy.update({'user_type': 'SM'})
         serializer = UserSerializer(data = copy)
@@ -192,15 +222,25 @@ class SignUpFinalSalesman(APIView):
             print(serializer.errors)
             return Response({
                 'result': False,
-                'message': 'ثبت‌نام با خطا مواجه شد.',
+                'message': 'ثبت‌نام با خطا مواجه شد.'
             })
-        else:
-            user = serializer.save()
-            Salesman.objects.create(user = user)
+        user = serializer.save()  # TODO('Wrong logic')
+        serializer = SalesmanSerializer(data = {
+            'user': user.pk,
+            'avatar': default_storage.open('tmp/' + filename, 'rb')
+        })
+        if serializer.is_valid():
+            serializer.save()
             Code4DigitSalesman.objects.get(email = copy['email']).delete()
             return Response({
                 'result': True,
                 'message': 'ثبت‌نام با موفقیت انجام شد.',
+            })
+        else:
+            print(serializer.errors)
+            return Response({
+                'result': False,
+                'message': 'ثبت‌نام با خطا مواجه شد.'
             })
 
 
@@ -468,10 +508,12 @@ class DiscountToCustomer(APIView):
         })
 
 
+# noinspection PyMethodMayBeStatic
 class EditSalesmanProfileView(APIView):
-    def put(self, request, pk, Format = None):
+    def put(self, request, pk, Format = None) -> Response:
+        # print(request.databases)
         salesman = Salesman.objects.get(pk = pk)
-        avatar = request.data.pop('avatar')
+        avatar = request.data.copy().pop('avatar')
         file = avatar[0]
         filename = 'SM_' + str(pk) + '.jpg'
         with default_storage.open('tmp/' + filename, 'wb') as destination:
