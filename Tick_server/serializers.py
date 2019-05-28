@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, \
-    Shop, CandidateProduct, ShopKind, City, CheckBoxPoll, CheckBoxOption
+    Shop, CandidateProduct, ShopKind, City, CheckBoxPoll, CheckBoxOption,\
+    ParagraphPoll, LinearScalePoll, MultipleChoicePoll, MultipleChoiceOption, ShortAnswerPoll
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -19,6 +20,21 @@ class UserSerializer(serializers.ModelSerializer):
         CustomUser.objects.create_user(username=username, password=password, **validated_data)
         return CustomUser.objects.get(username=username)
 
+    def update(self, instance: CustomUser, validated_data):
+        instance.username = validated_data.get('username', instance.username)
+        instance.phone_number = validated_data.get('phone_number', instance.phone_number)
+        instance.birth_date = validated_data.get('birth_date', instance.birth_date)
+        instance.gender = validated_data.get('gender', instance.gender)
+        instance.location = validated_data.get('location', instance.location)
+        instance.city = validated_data.get('city', instance.city)
+        if 'password' in validated_data:
+            instance.set_password(validated_data['password'])
+        instance.save()
+        return instance
+        # new_instance = super().update(instance, validated_data)
+        # new_instance.save()
+        # return new_instance
+
 
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,6 +47,11 @@ class SalesmanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salesman
         fields = '__all__'
+
+    def update(self, instance, validated_data):
+        instance.avatar = validated_data.get('avatar', instance.avatar)
+        instance.save()
+        return instance
 
 
 class DiscountSerializer(serializers.ModelSerializer):
@@ -80,4 +101,33 @@ class CheckBoxPollOptionSerializer(serializers.ModelSerializer):
         model = CheckBoxOption
         fields = '__all__'
 
+
+class ParagraphPollSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ParagraphPoll
+        fields = '__all__'
+
+
+class LinearScalePollSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LinearScalePoll
+        fields = '__all__'
+
+
+class MultipleChoicePollSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MultipleChoicePoll
+        fields = '__all__'
+
+
+class MultipleChoiceOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MultipleChoiceOption
+        fields = '__all__'
+
+
+class ShortAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShortAnswerPoll
+        fields = '__all__'
 

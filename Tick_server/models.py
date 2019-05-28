@@ -26,7 +26,7 @@ class CustomUser(AbstractUser):
 
 
 def upload_to_path(instance, filename):
-    return 'Salesman/' + str(instance.user.username) + '.jpg'
+    return 'Salesman/' + str(instance.user.email) + '.jpg'
 
 
 class Salesman(models.Model):
