@@ -1,4 +1,4 @@
-"""tick_project URL Configuration
+urls_ = """tick_project URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/2.2/topics/http/urls/
@@ -19,7 +19,7 @@ from django.urls import path
 from Tick_server.views import SignUpFirst, SignUpSecond, ResendCode, Login, SignUpFinal, ActiveDiscountListView, \
     InactiveDiscountListView, SignUpFirstSalesman, SignUpSecondSalesman, ResendCodeSalesman, SignUpFinalSalesman, \
     LoginSalesman, AddShop, AddDiscount, DiscountToCustomer, GetCity, GetShopKind, EditCustomerProfile, \
-    EditSalesmanProfileView
+    EditSalesmanProfileView, AddPoll
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,7 +28,7 @@ urlpatterns = [
     path('signup-customer/resend-code/', ResendCode.as_view()),
     path('signup-customer/complete-info/', SignUpFinal.as_view()),
     path('login-customer/', Login.as_view()),
-    path('edit-profile-customer/<int:pk>/', EditCustomerProfile.as_view()),
+    path('edit-profile-customer/', EditCustomerProfile.as_view()),
     path('signup-salesman/email-auth/', SignUpFirstSalesman.as_view()),
     path('signup-salesman/confirm-email/', SignUpSecondSalesman.as_view()),
     path('signup-salesman/resend-code/', ResendCodeSalesman.as_view()),
@@ -41,5 +41,7 @@ urlpatterns = [
     path('discount-to-customer/', DiscountToCustomer.as_view()),
     path('cities/<int:pk>/', GetCity.as_view()),
     path('shop-kind/<int:pk>/', GetShopKind.as_view()),
-    path('edit-profile-salesman/<int:pk>/', EditSalesmanProfileView.as_view())
+    path('edit-profile-salesman/<int:pk>/', EditSalesmanProfileView.as_view()),
+    path('add-poll/', AddPoll.as_view()),
 ]
+

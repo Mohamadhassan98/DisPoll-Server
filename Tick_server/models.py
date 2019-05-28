@@ -25,9 +25,13 @@ class CustomUser(AbstractUser):
     city = models.ForeignKey(City, on_delete=models.CASCADE, null=True, blank=True)  # Not Null
 
 
+def upload_to_path(instance, filename):
+    return 'Salesman/' + str(instance.user.username) + '.jpg'
+
+
 class Salesman(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    avatar = models.ImageField(null=True)
+    avatar = models.ImageField(null = True, upload_to=upload_to_path)
 
     def check_password(self, raw_password):
         return self.user.check_password(raw_password)
@@ -63,7 +67,7 @@ class Poll(models.Model):
         (10, 10)
     )
     importance = models.IntegerField(choices=IMPORTANCE)
-    remaining_time = models.DateTimeField()
+    remaining_time = models.IntegerField()
     text = models.TextField()
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
 

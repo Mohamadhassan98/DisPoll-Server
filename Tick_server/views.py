@@ -10,9 +10,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Tick_server.models import Code4Digit, Customer, Discount, Code4DigitSalesman, Salesman, CustomUser, Shop, \
-    CandidateProduct, City, ShopKind
+    CandidateProduct, City, ShopKind, CheckBoxPoll, CheckBoxOption
 from Tick_server.serializers import DiscountSerializer, PollSerializer, UserSerializer, \
-    SalesmanSerializer, ShopSerializer, CandidateProductSerializer, ShopKindSerializer, CitySerializer
+    SalesmanSerializer, ShopSerializer, CandidateProductSerializer, ShopKindSerializer, CitySerializer, \
+    CheckBoxPollSerializer, CheckBoxPollOptionSerializer
 
 
 # noinspection PyMethodMayBeStatic
@@ -135,10 +136,25 @@ class Login(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditCustomerProfile(APIView):
-    def put(self, request, pk) -> Response:
-        customer = Customer.objects.get(pk=pk)
-        copy = request.data.copy()
-        copy.update({'user_type': 'CU'})
+    def post(self, request):
+        customer = Customer.objects.get(user__phone_number=request.data['phone_number'])
+        _mutable = request.data._mutable
+        request.data._mutable = True
+        if 'new_password' in request.data:
+            old_password = request.data.pop('old_password')
+            new_password = request.data.pop('new_password')
+            if not customer.check_password(old_password):
+                return Response({
+                    'result': False,
+                    'message': 'رمز قبلی نادرست وارد شده است.'
+                })
+            else:
+                copy = request.data.copy()
+                copy.update({'user_type': 'CU', 'password': new_password})
+        else:
+            copy = request.data.copy()
+            copy.update({'user_type': 'CU'})
+        request.data._mutable = False
         serializer = UserSerializer(customer.user, data=copy)
         if not serializer.is_valid():
             print(serializer.errors)
@@ -151,8 +167,26 @@ class EditCustomerProfile(APIView):
             return Response({
                 'result': True,
                 'message': 'ویرایش اطلاعات با موفقیت انجام شد.',
-                'salesman': serializer.data
             })
+
+    # def put(self, request, pk) -> Response:
+    #     customer = Customer.objects.get(pk=pk)
+    #     copy = request.data.copy()
+    #     copy.update({'user_type': 'CU'})
+    #     serializer = UserSerializer(customer.user, data=copy)
+    #     if not serializer.is_valid():
+    #         print(serializer.errors)
+    #         return Response({
+    #             'result': False,
+    #             'message': 'ویرایش اطلاعات با خطا مواجه شد.'
+    #         })
+    #     else:
+    #         serializer.save()
+    #         return Response({
+    #             'result': True,
+    #             'message': 'ویرایش اطلاعات با موفقیت انجام شد.',
+    #             'salesman': serializer.data
+    #         })
 
 
 # noinspection PyMethodMayBeStatic
@@ -208,18 +242,8 @@ class SignUpFinalSalesman(APIView):
         @param request: includes email and all necessary information to create new user
         @return: Response showing whether sign up is successful or not
         """
-        # print(request.data)
-        if 'avatar' in request.data:
-            avatar = request.data.pop('avatar')
-            file = avatar[0]
-            filename = 'SM_' + request.data['username'] + '.jpg'
-            with default_storage.open('tmp/' + filename, 'wb') as destination:
-                for chunk in file.chunks():
-                    destination.write(chunk)
-                destination.close()
-        copy = request.data.copy()
-        copy.update({'user_type': 'SM'})
-        serializer = UserSerializer(data=copy)
+        request.data.update({'user_type': 'SM'})
+        serializer = UserSerializer(data = request.data)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -227,18 +251,13 @@ class SignUpFinalSalesman(APIView):
                 'message': 'ثبت‌نام با خطا مواجه شد.'
             })
         user = serializer.save()  # TODO('Wrong logic')
-        data = {
-            'user': user.pk
-        }
-        if 'avatar' in request.data:
-            data.update({'avatar': default_storage.open('tmp/' + filename, 'rb')})
-        serializer = SalesmanSerializer(data=data)
+        request.data.update({'user': user.pk})
+        serializer = SalesmanSerializer(data = request.data)
         print(serializer.initial_data)
         if serializer.is_valid():
+            print('Serialized as: ' + str(serializer.validated_data))
             serializer.save()
-            Code4DigitSalesman.objects.get(email=copy['email']).delete()
-            if 'avatar' in request.data:
-                os.remove('tmp/' + filename)
+            Code4DigitSalesman.objects.get(email = request.data['email']).delete()
             return Response({
                 'result': True,
                 'message': 'ثبت‌نام با موفقیت انجام شد.',
@@ -249,6 +268,55 @@ class SignUpFinalSalesman(APIView):
                 'result': False,
                 'message': 'ثبت‌نام با خطا مواجه شد.'
             })
+# noinspection PyMethodMayBeStatic
+# class SignUpFinalSalesman(APIView):
+#     def post(self, request) -> Response:
+#         """
+#         Gets email and other information to sign up a user.
+#         @param request: includes email and all necessary information to create new user
+#         @return: Response showing whether sign up is successful or not
+#         """
+#         # print(request.data)
+#         if 'avatar' in request.data:
+#             avatar = request.data.pop('avatar')
+#             file = avatar[0]
+#             filename = 'SM_' + request.data['username'] + '.jpg'
+#             with default_storage.open('tmp/' + filename, 'wb') as destination:
+#                 for chunk in file.chunks():
+#                     destination.write(chunk)
+#                 destination.close()
+#         copy = request.data.copy()
+#         copy.update({'user_type': 'SM'})
+#         serializer = UserSerializer(data=copy)
+#         if not serializer.is_valid():
+#             print(serializer.errors)
+#             return Response({
+#                 'result': False,
+#                 'message': 'ثبت‌نام با خطا مواجه شد.'
+#             })
+#         user = serializer.save()  # TODO('Wrong logic')
+#         data = {
+#             'user': user.pk
+#         }
+#         if 'avatar' in request.data:
+#             data.update({'avatar': default_storage.open('tmp/' + filename, 'rb')})
+#         serializer = SalesmanSerializer(data=data)
+#         print(serializer.initial_data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             Code4DigitSalesman.objects.get(email=copy['email']).delete()
+#             if 'avatar' in request.data:
+#                 os.remove('tmp/' + filename)
+#             return Response({
+#                 'result': True,
+#                 'message': 'ثبت‌نام با موفقیت انجام شد.',
+#             })
+#         else:
+#             print(serializer.errors)
+#             return Response({
+#                 'result': False,
+#                 'message': 'ثبت‌نام با خطا مواجه شد.'
+#             })
 
 
 # noinspection PyMethodMayBeStatic
@@ -610,14 +678,54 @@ class AddPoll(APIView):
         @param request:
         @return:
         """
-        serializer = PollSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({
-                'result': False,
-                'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-            })
-        else:
+        _mutable = request.data._mutable
+        request.data._mutable = True
+        type_poll = request.data.pop('type')
+        if type_poll[0] == 'CheckBoxPoll':
+            answer_texts = request.data.pop('answer_texts')
+            answer_texts = (answer_texts[0]).split(',')
+            print("%%%%%%")
+            print(request.data)
+            request.data._mutable = False
+            serializer = CheckBoxPollSerializer(data=request.data)
+            if not serializer.is_valid():
+                print(serializer.errors)
+                return Response({
+                    'result': False,
+                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                })
+            poll = serializer.save()
+            for ans in answer_texts:
+                data = {
+                    'answer_text': ans,
+                    'poll': poll.pk
+                }
+                print(data)
+                option_serializer = CheckBoxPollOptionSerializer(data=data)
+                if not option_serializer.is_valid():
+                    print(serializer.errors)
+                    return Response({
+                        'result': False,
+                        'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                    })
+                option_serializer.save()
             return Response({
                 'result': True,
                 'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
             })
+        return Response({
+            'result': True,
+            'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
+        })
+
+        # serializer = PollSerializer(data=request.data)
+        # if not serializer.is_valid():
+        #     return Response({
+        #         'result': False,
+        #         'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+        #     })
+        # else:
+        #     return Response({
+        #         'result': True,
+        #         'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
+        #     })

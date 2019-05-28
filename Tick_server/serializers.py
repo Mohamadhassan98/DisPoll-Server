@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, Shop, CandidateProduct, ShopKind, City
+from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, \
+    Shop, CandidateProduct, ShopKind, City, CheckBoxPoll, CheckBoxOption
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -15,8 +16,8 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         validated_data.pop('groups')
         validated_data.pop('user_permissions')
-        CustomUser.objects.create_user(username = username, password = password, **validated_data)
-        return CustomUser.objects.get(username = username)
+        CustomUser.objects.create_user(username=username, password=password, **validated_data)
+        return CustomUser.objects.get(username=username)
 
 
 class CustomerSerializer(serializers.ModelSerializer):
@@ -66,3 +67,17 @@ class CitySerializer(serializers.ModelSerializer):
     class Meta:
         model = City
         fields = '__all__'
+
+
+class CheckBoxPollSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CheckBoxPoll
+        fields = '__all__'
+
+
+class CheckBoxPollOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CheckBoxOption
+        fields = '__all__'
+
+
