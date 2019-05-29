@@ -1,20 +1,16 @@
-import os
 import random
 import string
 
 from django.contrib.auth import login
 from django.core.files import File
-from django.core.files.storage import default_storage
 from django.http import FileResponse
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from Tick_server.models import Code4Digit, Customer, Discount, Code4DigitSalesman, Salesman, CustomUser, Shop, \
-    CandidateProduct, City, ShopKind, CheckBoxPoll, CheckBoxOption
-from Tick_server.serializers import DiscountSerializer, PollSerializer, UserSerializer, \
-    SalesmanSerializer, ShopSerializer, CandidateProductSerializer, ShopKindSerializer, CitySerializer, \
-    CheckBoxPollSerializer, CheckBoxPollOptionSerializer, ParagraphPollSerializer, LinearScalePollSerializer,\
-    MultipleChoiceOptionSerializer, MultipleChoicePollSerializer, ShortAnswerSerializer, CustomerSerializer
+from Tick_server.models import Code4Digit, Code4DigitSalesman
+from Tick_server.serializers import *
 
 
 # noinspection PyMethodMayBeStatic
@@ -26,13 +22,13 @@ class SignUpFirst(APIView):
         @return: Response showing whether saving phone number was successful or not.
         """
         phone = request.data['phone_number']
-        if Customer.objects.filter(user__phone_number=phone).count() == 1:
+        if Customer.objects.filter(user__phone_number = phone).count() == 1:
             return Response({
                 'result': False,
                 'message': 'کاربری با این شماره تلفن قبلاً ثبت‌نام کرده.',
             })
         else:
-            Code4Digit.objects.update_or_create(phone_number=phone, defaults={'code': '1111'})
+            Code4Digit.objects.update_or_create(phone_number = phone, defaults = {'code': '1111'})
             return Response({
                 'result': True,
                 'message': 'شماره تلفن با موفقیت ثبت شد.',
@@ -49,7 +45,7 @@ class SignUpSecond(APIView):
         """
         phone = request.data['phone_number']
         code = request.data['code']
-        if Code4Digit.objects.filter(phone_number=phone, code=code).count() == 1:
+        if Code4Digit.objects.filter(phone_number = phone, code = code).count() == 1:
             return Response({
                 'result': True,
                 'message': 'ثبت‌نام با موفقیت انجام شد.',
@@ -70,7 +66,7 @@ class ResendCode(APIView):
         @return: Response always contains true
         """
         phone = request.data['phone_number']
-        Code4Digit.objects.filter(phone_number=phone).update(code='1111')
+        Code4Digit.objects.filter(phone_number = phone).update(code = '1111')
         return Response({
             'result': True,
             'message': 'کد مجدداً ارسال شد.',
@@ -87,7 +83,7 @@ class SignUpFinal(APIView):
         """
         copy = request.data.copy()
         copy.update({'user_type': 'CU'})
-        serializer = UserSerializer(data=copy)
+        serializer = UserSerializer(data = copy)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -96,8 +92,8 @@ class SignUpFinal(APIView):
             })
         else:
             user = serializer.save()
-            Customer.objects.create(user=user)
-            Code4Digit.objects.get(phone_number=copy['phone_number']).delete()
+            Customer.objects.create(user = user)
+            Code4Digit.objects.get(phone_number = copy['phone_number']).delete()
             return Response({
                 'result': True,
                 'message': 'ثبت‌نام با موفقیت انجام شد.',
@@ -115,7 +111,7 @@ class Login(APIView):
         """
         phone = request.data['phone_number']
         password = request.data['password']
-        customer = Customer.objects.filter(user__phone_number=phone)
+        customer = Customer.objects.filter(user__phone_number = phone)
         if customer.count() == 0:
             return Response({
                 'result': False,
@@ -128,17 +124,21 @@ class Login(APIView):
             })
         login(request, customer[0].user)
         serializer = UserSerializer(customer[0].user)
+        token, _ = Token.objects.get_or_create(user = customer[0].user)
         return Response({
             'result': True,
             'message': 'ورود با موفقیت انجام شد.',
-            'customer_info': serializer.data
+            'customer_info': serializer.data,
+            'token': token.key
         })
 
 
 # noinspection PyMethodMayBeStatic
 class EditCustomerProfile(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request):
-        customer = Customer.objects.get(user__phone_number=request.data['phone_number'])
+        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
         _mutable = request.data._mutable
         request.data._mutable = True
         if 'new_password' in request.data:
@@ -156,7 +156,7 @@ class EditCustomerProfile(APIView):
             copy = request.data.copy()
             copy.update({'user_type': 'CU'})
         request.data._mutable = False
-        serializer = UserSerializer(customer.user, data=copy)
+        serializer = UserSerializer(customer.user, data = copy)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -171,25 +171,6 @@ class EditCustomerProfile(APIView):
                 'n': serializer.data
             })
 
-    # def put(self, request, pk) -> Response:
-    #     customer = Customer.objects.get(pk=pk)
-    #     copy = request.data.copy()
-    #     copy.update({'user_type': 'CU'})
-    #     serializer = UserSerializer(customer.user, data=copy)
-    #     if not serializer.is_valid():
-    #         print(serializer.errors)
-    #         return Response({
-    #             'result': False,
-    #             'message': 'ویرایش اطلاعات با خطا مواجه شد.'
-    #         })
-    #     else:
-    #         serializer.save()
-    #         return Response({
-    #             'result': True,
-    #             'message': 'ویرایش اطلاعات با موفقیت انجام شد.',
-    #             'salesman': serializer.data
-    #         })
-
 
 # noinspection PyMethodMayBeStatic
 class SignUpFirstSalesman(APIView):
@@ -201,13 +182,13 @@ class SignUpFirstSalesman(APIView):
         """
         email = request.data['email']
         password = request.data['password']
-        if Salesman.objects.filter(user__email=email).count() == 1:
+        if Salesman.objects.filter(user__email = email).count() == 1:
             return Response({
                 'result': False,
                 'message': 'کاربری با این ایمیل قبلاً ثبت‌نام کرده.',
             })
         else:
-            Code4DigitSalesman.objects.update_or_create(email=email, password=password, defaults={'code': '1111'})
+            Code4DigitSalesman.objects.update_or_create(email = email, password = password, defaults = {'code': '1111'})
             return Response({
                 'result': True,
                 'message': 'اطلاعات با موفقیت ذخیره شد.',
@@ -224,7 +205,7 @@ class SignUpSecondSalesman(APIView):
         """
         email = request.data['email']
         code = request.data['code']
-        if Code4DigitSalesman.objects.filter(email=email, code=code).count() == 1:
+        if Code4DigitSalesman.objects.filter(email = email, code = code).count() == 1:
             return Response({
                 'result': True,
                 'message': 'ثبت‌نام با موفقیت انجام شد.',
@@ -270,6 +251,8 @@ class SignUpFinalSalesman(APIView):
                 'result': False,
                 'message': 'ثبت‌نام با خطا مواجه شد.'
             })
+
+
 # noinspection PyMethodMayBeStatic
 # class SignUpFinalSalesman(APIView):
 #     def post(self, request) -> Response:
@@ -330,7 +313,7 @@ class ResendCodeSalesman(APIView):
         @return: Response always contains true
         """
         email = request.data['email']
-        Code4DigitSalesman.objects.filter(email=email).update(code='1111')
+        Code4DigitSalesman.objects.filter(email = email).update(code = '1111')
         return Response({
             'result': True,
             'message': 'کد مجدداً ارسال شد.',
@@ -355,9 +338,9 @@ class LoginSalesman(APIView):
 
         password = request.data['password']
         if email_field:
-            salesman = Salesman.objects.filter(user__email=email)
+            salesman = Salesman.objects.filter(user__email = email)
         else:
-            salesman = Salesman.objects.filter(user__username=username)
+            salesman = Salesman.objects.filter(user__username = username)
 
         if salesman.count() == 0:
             return Response({
@@ -387,7 +370,7 @@ class AddShop(APIView):
         @return: Response showing whether adding a new shop was successful, if adding is successful, then sends shop
         id
         """
-        serializer = ShopSerializer(data=request.data)
+        serializer = ShopSerializer(data = request.data)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -420,7 +403,7 @@ class AddDiscount(APIView):
         copy.update({'count': count})
         copy.update({'percent': percent})
         copy.update({'expire_date': exp})
-        serializer = CandidateProductSerializer(data=copy)
+        serializer = CandidateProductSerializer(data = copy)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -431,10 +414,10 @@ class AddDiscount(APIView):
             c_product = serializer.save()
             for i in range(copy['count']):
                 while True:
-                    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-                    if Discount.objects.filter(code=code).count() == 0:
+                    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k = 6))
+                    if Discount.objects.filter(code = code).count() == 0:
                         break
-                Discount.objects.create(candidate_product=c_product, code=code)
+                Discount.objects.create(candidate_product = c_product, code = code)
             return Response({
                 'result': True,
                 'message': 'اضافه کردن تخفیف با موفقیت انجام شد.'
@@ -443,6 +426,8 @@ class AddDiscount(APIView):
 
 # noinspection PyMethodMayBeStatic
 class ActiveDiscountListView(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request) -> Response:
         """
         Gets phone number, page and offset and retrieve active discounts list of that customer
@@ -452,10 +437,10 @@ class ActiveDiscountListView(APIView):
         page = int(request.data['page'])
         offset = int(request.data['offset'])
         phone = request.data['phone_number']
-        user = CustomUser.objects.get(phone_number=phone)
-        discounts = Discount.objects.filter(active=True, customer=Customer.objects.get(user=user))[
+        user = CustomUser.objects.get(phone_number = phone)
+        discounts = Discount.objects.filter(active = True, customer = Customer.objects.get(user = user))[
                     page * offset: page * offset + offset]
-        serializer = DiscountSerializer(discounts, many=True)
+        serializer = DiscountSerializer(discounts, many = True)
         return Response({
             'result': True,
             'message': 'جستجو با موفقیت انجام شد.',
@@ -465,6 +450,8 @@ class ActiveDiscountListView(APIView):
 
 # noinspection PyMethodMayBeStatic
 class InactiveDiscountListView(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request) -> Response:
         """
         Gets phone number, page and offset and retrieve inactive discounts list of that customer
@@ -474,10 +461,10 @@ class InactiveDiscountListView(APIView):
         page = int(request.data['page'])
         offset = int(request.data['offset'])
         phone = request.data['phone_number']
-        user = CustomUser.objects.get(phone_number=phone)
-        discounts = Discount.objects.filter(active=False, customer=Customer.objects.get(user=user))[
+        user = CustomUser.objects.get(phone_number = phone)
+        discounts = Discount.objects.filter(active = False, customer = Customer.objects.get(user = user))[
                     page * offset: page * offset + offset]
-        serializer = DiscountSerializer(discounts, many=True)
+        serializer = DiscountSerializer(discounts, many = True)
         return Response({
             'result': True,
             'message': 'جستجو با موفقیت انجام شد.',
@@ -494,7 +481,7 @@ class GetCity(APIView):
         @return: Response showing whether city was found or not. If city was found, it will be returned respectively.
         """
         try:
-            city = City.objects.get(id=pk)
+            city = City.objects.get(id = pk)
             serializer = CitySerializer(city)
         except City.DoesNotExist:
             return Response({
@@ -518,7 +505,7 @@ class GetShopKind(APIView):
         respectively.
         """
         try:
-            shop_kind = ShopKind.objects.get(id=pk)
+            shop_kind = ShopKind.objects.get(id = pk)
             serializer = ShopKindSerializer(shop_kind)
         except ShopKind.DoesNotExist:
             return Response({
@@ -541,35 +528,35 @@ class DiscountToCustomer(APIView):
         :return:
         """
         username = request.data['username']
-        customer = Customer.objects.get(user__username=username)
-        shop = Shop.objects.get(id=request.data['shop_id'])
-        poll_count = customer.linear_scale_poll_answers.filter(shop=shop).count()
-        poll_count += customer.short_answer_poll_answers.filter(shop=shop).count()
-        poll_count += customer.checkbox_poll_answers.filter(shop=shop).count()
-        poll_count += customer.multiple_choice_poll_answers.filter(shop=shop).count()
-        poll_count += customer.paragraph_poll_answers.filter(shop=shop).count()
-        discounts = CandidateProduct.objects.filter(shop=shop, count__gt=0)
+        customer = Customer.objects.get(user__username = username)
+        shop = Shop.objects.get(id = request.data['shop_id'])
+        poll_count = customer.linear_scale_poll_answers.filter(shop = shop).count()
+        poll_count += customer.short_answer_poll_answers.filter(shop = shop).count()
+        poll_count += customer.checkbox_poll_answers.filter(shop = shop).count()
+        poll_count += customer.multiple_choice_poll_answers.filter(shop = shop).count()
+        poll_count += customer.paragraph_poll_answers.filter(shop = shop).count()
+        discounts = CandidateProduct.objects.filter(shop = shop, count__gt = 0)
         my_discounts = None
         if 50 <= poll_count:
-            my_discounts = discounts.filter(percent__lte=100, percent__gt=90)
+            my_discounts = discounts.filter(percent__lte = 100, percent__gt = 90)
         elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte=90, percent__gt=80)
+            my_discounts = discounts.filter(percent__lte = 90, percent__gt = 80)
         elif 40 <= poll_count < 45 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte=80, percent__gt=70)
+            my_discounts = discounts.filter(percent__lte = 80, percent__gt = 70)
         elif 35 <= poll_count < 40 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte=70, percent__gt=60)
+            my_discounts = discounts.filter(percent__lte = 70, percent__gt = 60)
         elif 30 <= poll_count < 35 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte=60, percent__gt=50)
+            my_discounts = discounts.filter(percent__lte = 60, percent__gt = 50)
         elif 25 <= poll_count < 30 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte=50, percent__gt=40)
+            my_discounts = discounts.filter(percent__lte = 50, percent__gt = 40)
         elif 20 <= poll_count < 25 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte=40, percent__gt=30)
+            my_discounts = discounts.filter(percent__lte = 40, percent__gt = 30)
         elif 15 <= poll_count < 20 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte=30, percent__gt=20)
+            my_discounts = discounts.filter(percent__lte = 30, percent__gt = 20)
         elif 10 <= poll_count < 15 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte=20, percent__gt=10)
+            my_discounts = discounts.filter(percent__lte = 20, percent__gt = 10)
         elif poll_count < 10 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte=10)
+            my_discounts = discounts.filter(percent__lte = 10)
         else:
             return Response({
                 'result': False,
@@ -577,8 +564,8 @@ class DiscountToCustomer(APIView):
             })
         import random
         product = random.sample(my_discounts, 1)[0]
-        discount = Discount.objects.filter(candidate_product=product, customer__isnull=True)[0]
-        discount.update(customer=customer, active=True)
+        discount = Discount.objects.filter(candidate_product = product, customer__isnull = True)[0]
+        discount.update(customer = customer, active = True)
         return Response({
             'result': True,
             'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.'
@@ -588,7 +575,7 @@ class DiscountToCustomer(APIView):
 # noinspection PyMethodMayBeStatic
 class EditSalesmanProfileView(APIView):
     def put(self, request, pk):
-        salesman = Salesman.objects.get(pk=pk)
+        salesman = Salesman.objects.get(pk = pk)
         if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
             if not salesman.check_password(old_password[0]):
@@ -596,7 +583,7 @@ class EditSalesmanProfileView(APIView):
                     'result': False,
                     'message': 'رمز وارد شده صحیح نیست.'
                 })
-        serializer = UserSerializer(salesman.user, request.data, partial=True)
+        serializer = UserSerializer(salesman.user, request.data, partial = True)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -608,7 +595,7 @@ class EditSalesmanProfileView(APIView):
             print("%%%%%%%%%%%")
             print(request.data)
             if 'avatar' in request.data:
-                sserializer = SalesmanSerializer(salesman, request.data, partial=True)
+                sserializer = SalesmanSerializer(salesman, request.data, partial = True)
                 if not sserializer.is_valid():
                     print(sserializer.errors)
                     return Response({
@@ -624,26 +611,26 @@ class EditSalesmanProfileView(APIView):
 
 
 class test(APIView):
-    def get(self, request, path, Format=None):
+    def get(self, request, path, Format = None):
         fe = File(open('tmp/' + path, 'rb'))
         return FileResponse(fe)
 
 
 class NotCompletedPollList(APIView):
-    def post(self, request, Format=None):
+    def post(self, request, Format = None):
         page = request.data['post']
         offset = request.data['offset']
         phone = request.data['phone_number']
-        customer = Customer.objects.get(phone_number=phone)
+        customer = Customer.objects.get(phone_number = phone)
         polls = []
-        polls.extend(customer.linear_scale_poll_answer.filter(completed=False))
-        polls.extend(customer.paragraph_poll_answers.filter(completed=False))
-        polls.extend(customer.short_answer_poll_answers.filter(completed=False))
-        polls.extend(customer.multiple_choice_poll_answers.filter(completed=False))
-        polls.extend(customer.checkbox_poll_answers.filter(completed=False))
-        polls.sort(key=lambda poll: poll.remaining_time)
+        polls.extend(customer.linear_scale_poll_answer.filter(completed = False))
+        polls.extend(customer.paragraph_poll_answers.filter(completed = False))
+        polls.extend(customer.short_answer_poll_answers.filter(completed = False))
+        polls.extend(customer.multiple_choice_poll_answers.filter(completed = False))
+        polls.extend(customer.checkbox_poll_answers.filter(completed = False))
+        polls.sort(key = lambda poll: poll.remaining_time)
         polls = polls[page - 1 * offset: page * offset]
-        serializer = PollSerializer(polls, many=True)
+        serializer = PollSerializer(polls, many = True)
         return Response({
             'result': True,
             'message': 'جستجو با موفقیت انجام شد.',
@@ -653,19 +640,19 @@ class NotCompletedPollList(APIView):
 
 # not completed
 class CompletePoll(APIView):
-    def post(self, request, Format=None):
+    def post(self, request, Format = None):
         poll_id = request.data['poll_id']
         username = request.data['username']
         poll_type = request.data['poll_type']
 
 
 class getShops(APIView):
-    def post(self, request, Format=None):
+    def post(self, request, Format = None):
         username = request.data['username']
 
 
 class AddPoll(APIView):
-    def post(self, request, Format=None) -> Response:
+    def post(self, request, Format = None) -> Response:
         """
         TODO
         @param request:
@@ -677,7 +664,7 @@ class AddPoll(APIView):
         if type_poll[0] == 'CheckBoxPoll':
             answer_texts = request.data.pop('answer_texts')
             answer_texts = (answer_texts[0]).split(',')
-            serializer = CheckBoxPollSerializer(data=request.data)
+            serializer = CheckBoxPollSerializer(data = request.data)
             if not serializer.is_valid():
                 print(serializer.errors)
                 return Response({
@@ -692,7 +679,7 @@ class AddPoll(APIView):
                     'poll': poll.pk
                 }
                 print(data)
-                option_serializer = CheckBoxPollOptionSerializer(data=data)
+                option_serializer = CheckBoxPollOptionSerializer(data = data)
                 temp.append(option_serializer)
                 if not option_serializer.is_valid():
                     print(serializer.errors)
@@ -707,7 +694,7 @@ class AddPoll(APIView):
                 'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
             })
         elif type_poll[0] == 'ParagraphPoll':
-            serializer = ParagraphPollSerializer(data=request.data)
+            serializer = ParagraphPollSerializer(data = request.data)
             if not serializer.is_valid():
                 print(serializer.errors)
                 return Response({
@@ -721,7 +708,7 @@ class AddPoll(APIView):
                     'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
                 })
         elif type_poll[0] == 'LinearScalePoll':
-            serializer = LinearScalePollSerializer(data=request.data)
+            serializer = LinearScalePollSerializer(data = request.data)
             if not serializer.is_valid():
                 print(serializer.errors)
                 return Response({
@@ -738,7 +725,7 @@ class AddPoll(APIView):
         elif type_poll[0] == 'MultipleChoicePoll':
             answer_texts = request.data.pop('answer_texts')
             answer_texts = (answer_texts[0]).split(',')
-            serializer = MultipleChoicePollSerializer(data=request.data)
+            serializer = MultipleChoicePollSerializer(data = request.data)
             if not serializer.is_valid():
                 print(serializer.errors)
                 return Response({
@@ -753,7 +740,7 @@ class AddPoll(APIView):
                     'poll': poll.pk
                 }
                 print(data)
-                option_serializer = MultipleChoiceOptionSerializer(data=data)
+                option_serializer = MultipleChoiceOptionSerializer(data = data)
                 temp.append(option_serializer)
                 if not option_serializer.is_valid():
                     print(serializer.errors)
@@ -768,7 +755,7 @@ class AddPoll(APIView):
                 'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
             })
         else:
-            serializer = ShortAnswerSerializer(data=request.data)
+            serializer = ShortAnswerSerializer(data = request.data)
             if not serializer.is_valid():
                 print(serializer.errors)
                 return Response({
@@ -781,4 +768,3 @@ class AddPoll(APIView):
                     'result': True,
                     'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
                 })
-

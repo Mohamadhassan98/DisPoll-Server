@@ -25,6 +25,7 @@ class CustomUser(AbstractUser):
     city = models.ForeignKey(City, on_delete=models.CASCADE, null=True, blank=True)  # Not Null
 
 
+# noinspection PyUnusedLocal
 def upload_to_path(instance, filename):
     return 'Salesman/' + str(instance.user.email) + '.jpg'
 
