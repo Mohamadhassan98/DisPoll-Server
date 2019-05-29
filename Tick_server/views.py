@@ -545,7 +545,7 @@ class EditSalesmanProfileView(APIView):
     permission_classes = []
 
     def post(self, request):
-        salesman = Salesman.objects.get(email=request.data['email'])
+        salesman = Salesman.objects.get(user__email=request.data['email'])
         if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
             if not salesman.check_password(old_password[0]):

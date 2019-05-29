@@ -57,8 +57,9 @@ class SalesmanSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def update(self, instance, validated_data):
-        if os.path.isfile('new-temp/Salesman' + instance.username + '.jpg'):
-            os.remove('new-temp/Salesman' + instance.username + '.jpg')
+        if os.path.isfile('new-temp/Salesman/' + instance.user.username + '.jpg'):
+            print("oyyyyyyyyyy")
+            os.remove('new-temp/Salesman/' + instance.user.username + '.jpg')
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.save()
         return instance
