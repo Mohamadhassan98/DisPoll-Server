@@ -42,7 +42,7 @@ urlpatterns = [
     path('discount-to-customer/', DiscountToCustomer.as_view()),
     path('cities/<int:pk>/', GetCity.as_view()),
     path('shop-kind/<int:pk>/', GetShopKind.as_view()),
-    path('edit-profile-salesman/<int:pk>/', EditSalesmanProfileView.as_view()),
+    path('edit-profile-salesman/', EditSalesmanProfileView.as_view()),
     path('add-poll/', AddPoll.as_view()),
 ]
 

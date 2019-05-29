@@ -101,10 +101,12 @@ class SignUpFinalCustomer(APIView):
         else:
             user = serializer.save()
             Customer.objects.create(user = user)
+            token, _ = Token.objects.get_or_create(user=user)
             Code4Digit.objects.get(phone_number = copy['phone_number']).delete()
             return Response({
                 'result': True,
                 'message': 'ثبت‌نام با موفقیت انجام شد.',
+                'token': token.key
             })
 
 
@@ -145,6 +147,8 @@ class LoginCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditCustomerProfile(APIView):
+    permission_classes = []
+
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
@@ -175,6 +179,8 @@ class EditCustomerProfile(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpFirstSalesman(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Gets and saves new salesman email and password
@@ -198,6 +204,8 @@ class SignUpFirstSalesman(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpSecondSalesman(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Gets email and code sent to user and checks if it's valid
@@ -220,6 +228,8 @@ class SignUpSecondSalesman(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpFinalSalesman(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Gets email and other information to sign up a user.
@@ -255,58 +265,9 @@ class SignUpFinalSalesman(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-# class SignUpFinalSalesman(APIView):
-#     def post(self, request) -> Response:
-#         """
-#         Gets email and other information to sign up a user.
-#         @param request: includes email and all necessary information to create new user
-#         @return: Response showing whether sign up is successful or not
-#         """
-#         # print(request.data)
-#         if 'avatar' in request.data:
-#             avatar = request.data.pop('avatar')
-#             file = avatar[0]
-#             filename = 'SM_' + request.data['username'] + '.jpg'
-#             with default_storage.open('tmp/' + filename, 'wb') as destination:
-#                 for chunk in file.chunks():
-#                     destination.write(chunk)
-#                 destination.close()
-#         copy = request.data.copy()
-#         copy.update({'user_type': 'SM'})
-#         serializer = UserSerializer(data=copy)
-#         if not serializer.is_valid():
-#             print(serializer.errors)
-#             return Response({
-#                 'result': False,
-#                 'message': 'ثبت‌نام با خطا مواجه شد.'
-#             })
-#         user = serializer.save()  # TODO('Wrong logic')
-#         data = {
-#             'user': user.pk
-#         }
-#         if 'avatar' in request.data:
-#             data.update({'avatar': default_storage.open('tmp/' + filename, 'rb')})
-#         serializer = SalesmanSerializer(data=data)
-#         print(serializer.initial_data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             Code4DigitSalesman.objects.get(email=copy['email']).delete()
-#             if 'avatar' in request.data:
-#                 os.remove('tmp/' + filename)
-#             return Response({
-#                 'result': True,
-#                 'message': 'ثبت‌نام با موفقیت انجام شد.',
-#             })
-#         else:
-#             print(serializer.errors)
-#             return Response({
-#                 'result': False,
-#                 'message': 'ثبت‌نام با خطا مواجه شد.'
-#             })
-
-
-# noinspection PyMethodMayBeStatic
 class ResendCodeSalesman(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Gets email and sends a new code to that email
@@ -323,6 +284,8 @@ class ResendCodeSalesman(APIView):
 
 # noinspection PyMethodMayBeStatic
 class LoginSalesman(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Gets email or username and login credentials of a user and tries to login that user
@@ -364,6 +327,8 @@ class LoginSalesman(APIView):
 
 # noinspection PyMethodMayBeStatic
 class AddShop(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Adds a new shop.
@@ -390,6 +355,8 @@ class AddShop(APIView):
 
 # noinspection PyMethodMayBeStatic
 class AddDiscount(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Adds discount by number of count.
@@ -575,8 +542,10 @@ class DiscountToCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditSalesmanProfileView(APIView):
-    def put(self, request, pk):
-        salesman = Salesman.objects.get(pk = pk)
+    permission_classes = []
+
+    def post(self, request):
+        salesman = Salesman.objects.get(email=request.data['email'])
         if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
             if not salesman.check_password(old_password[0]):

@@ -27,7 +27,7 @@ class CustomUser(AbstractUser):
 
 # noinspection PyUnusedLocal
 def upload_to_path(instance, filename):
-    return 'Salesman/' + str(instance.user.email) + '.jpg'
+    return 'Salesman/' + str(instance.user.username) + '.jpg'
 
 
 class Salesman(models.Model):

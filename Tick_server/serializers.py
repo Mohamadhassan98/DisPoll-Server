@@ -1,3 +1,4 @@
+import os
 from rest_framework import serializers
 
 from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, \
@@ -56,6 +57,8 @@ class SalesmanSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def update(self, instance, validated_data):
+        if os.path.isfile('new-temp/Salesman' + instance.username + '.jpg'):
+            os.remove('new-temp/Salesman' + instance.username + '.jpg')
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.save()
         return instance
