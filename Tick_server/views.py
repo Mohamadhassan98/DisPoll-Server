@@ -628,7 +628,6 @@ class AddPoll(APIView):
         @param request:
         @return:
         """
-        _mutable = request.data._mutable
         request.data._mutable = True
         type_poll = request.data.pop('type')
         if type_poll[0] == 'CheckBoxPoll':
