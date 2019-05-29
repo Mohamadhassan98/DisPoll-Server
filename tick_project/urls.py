@@ -16,18 +16,19 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from Tick_server.views import SignUpFirst, SignUpSecond, ResendCode, Login, SignUpFinal, ActiveDiscountListView, \
+from Tick_server.views import SignUpFirstCustomer, SignUpSecondCustomer, ResendCodeCustomer, LoginCustomer, \
+    SignUpFinalCustomer, ActiveDiscountListView, \
     InactiveDiscountListView, SignUpFirstSalesman, SignUpSecondSalesman, ResendCodeSalesman, SignUpFinalSalesman, \
     LoginSalesman, AddShop, AddDiscount, DiscountToCustomer, GetCity, GetShopKind, EditCustomerProfile, \
     EditSalesmanProfileView, AddPoll
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('signup-customer/phone-auth/', SignUpFirst.as_view()),
-    path('signup-customer/confirm-phone/', SignUpSecond.as_view()),
-    path('signup-customer/resend-code/', ResendCode.as_view()),
-    path('signup-customer/complete-info/', SignUpFinal.as_view()),
-    path('login-customer/', Login.as_view()),
+    path('signup-customer/phone-auth/', SignUpFirstCustomer.as_view()),
+    path('signup-customer/confirm-phone/', SignUpSecondCustomer.as_view()),
+    path('signup-customer/resend-code/', ResendCodeCustomer.as_view()),
+    path('signup-customer/complete-info/', SignUpFinalCustomer.as_view()),
+    path('login-customer/', LoginCustomer.as_view()),
     path('edit-profile-customer/', EditCustomerProfile.as_view()),
     path('signup-salesman/email-auth/', SignUpFirstSalesman.as_view()),
     path('signup-salesman/confirm-email/', SignUpSecondSalesman.as_view()),

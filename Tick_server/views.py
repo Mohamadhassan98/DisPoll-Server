@@ -14,7 +14,9 @@ from Tick_server.serializers import *
 
 
 # noinspection PyMethodMayBeStatic
-class SignUpFirst(APIView):
+class SignUpFirstCustomer(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Gets and saves new customers I{phone_number}
@@ -36,7 +38,9 @@ class SignUpFirst(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-class SignUpSecond(APIView):
+class SignUpSecondCustomer(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Gets phone number and code sent to user and checks if it's valid
@@ -58,7 +62,9 @@ class SignUpSecond(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-class ResendCode(APIView):
+class ResendCodeCustomer(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Gets phone number and sends a new code to that number
@@ -74,7 +80,9 @@ class ResendCode(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-class SignUpFinal(APIView):
+class SignUpFinalCustomer(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Gets phone number and other information to sign up a user.
@@ -101,7 +109,9 @@ class SignUpFinal(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-class Login(APIView):
+class LoginCustomer(APIView):
+    permission_classes = []
+
     def post(self, request) -> Response:
         """
         Gets phone number and login credentials of a user and tries to login that user
@@ -141,22 +151,14 @@ class EditCustomerProfile(APIView):
         customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
         _mutable = request.data._mutable
         request.data._mutable = True
-        if 'new_password' in request.data:
+        if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
-            new_password = request.data.pop('new_password')
             if not customer.check_password(old_password[0]):
                 return Response({
                     'result': False,
                     'message': 'رمز قبلی نادرست وارد شده است.'
                 })
-            else:
-                copy = request.data.copy()
-                copy.update({'user_type': 'CU', 'password': new_password[0]})
-        else:
-            copy = request.data.copy()
-            copy.update({'user_type': 'CU'})
-        request.data._mutable = False
-        serializer = UserSerializer(customer.user, data = copy)
+        serializer = UserSerializer(customer.user, data = request.data, partial = True)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -168,7 +170,6 @@ class EditCustomerProfile(APIView):
             return Response({
                 'result': True,
                 'message': 'ویرایش اطلاعات با موفقیت انجام شد.',
-                'n': serializer.data
             })
 
 

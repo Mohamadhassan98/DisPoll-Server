@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, \
-    Shop, CandidateProduct, ShopKind, City, CheckBoxPoll, CheckBoxOption,\
+    Shop, CandidateProduct, ShopKind, City, CheckBoxPoll, CheckBoxOption, \
     ParagraphPoll, LinearScalePoll, MultipleChoicePoll, MultipleChoiceOption, ShortAnswerPoll
 
 
@@ -17,16 +17,23 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         validated_data.pop('groups')
         validated_data.pop('user_permissions')
+        validated_data.update({'is_active': True})
         CustomUser.objects.create_user(username=username, password=password, **validated_data)
         return CustomUser.objects.get(username=username)
 
     def update(self, instance: CustomUser, validated_data):
-        instance.username = validated_data.get('username', instance.username)
-        instance.phone_number = validated_data.get('phone_number', instance.phone_number)
+        print('validated data:')
+        print(validated_data)
         instance.birth_date = validated_data.get('birth_date', instance.birth_date)
         instance.gender = validated_data.get('gender', instance.gender)
         instance.location = validated_data.get('location', instance.location)
         instance.city = validated_data.get('city', instance.city)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        if instance.user_type == 'CU':
+            instance.email = validated_data.get('email', instance.email)
+        elif instance.user_type == 'SM':
+            instance.phone_number = validated_data.get('phone_number', instance.phone_number)
         if 'password' in validated_data:
             instance.set_password(validated_data['password'])
         instance.save()
