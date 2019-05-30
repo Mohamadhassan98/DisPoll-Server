@@ -1,15 +1,15 @@
-import random
-import string
-
 from django.contrib.auth import login
 from django.core.files import File
+from django.db import transaction
+from django.db.models import Q
 from django.http import FileResponse
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from Tick_server.models import Code4Digit, Code4DigitSalesman, CheckBoxPollAnswer, MultipleChoiceAnswer
+from Tick_server.models import Code4Digit, Code4DigitSalesman, CheckBoxPollAnswer, MultipleChoiceAnswer, PollAnswer, \
+    LinearScalePollAnswer, ShortAnswerPollAnswer, ParagraphPollAnswer
 from Tick_server.serializers import *
 
 
@@ -147,8 +147,6 @@ class LoginCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditCustomerProfile(APIView):
-    permission_classes = []
-
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
@@ -230,6 +228,7 @@ class SignUpSecondSalesman(APIView):
 class SignUpFinalSalesman(APIView):
     permission_classes = []
 
+    @transaction.atomic
     def post(self, request) -> Response:
         """
         Gets email and other information to sign up a user.
@@ -238,26 +237,22 @@ class SignUpFinalSalesman(APIView):
         """
         request.data._mutable = True
         request.data.update({'user_type': 'SM'})
-        serializer = UserSerializer(data = request.data)
-        if not serializer.is_valid():
-            print(serializer.errors)
-            return Response({
-                'result': False,
-                'message': 'ثبت‌نام با خطا مواجه شد.'
-            })
-        user = serializer.save()
-        request.data.update({'user': user.pk})
-        serializer = SalesmanSerializer(data = request.data)
-        print(serializer.initial_data)
-        if serializer.is_valid():
-            serializer.save()
-            Code4DigitSalesman.objects.get(email = request.data['email']).delete()
-            return Response({
-                'result': True,
-                'message': 'ثبت‌نام با موفقیت انجام شد.',
-            })
-        else:
-            print(serializer.errors)
+        try:
+            with transaction.atomic():
+                serializer = UserSerializer(data = request.data)
+                serializer.is_valid(raise_exception = True)
+                user = serializer.save()
+                request.data.update({'user': user.pk})
+                serializer = SalesmanSerializer(data = request.data)
+                serializer.is_valid(raise_exception = True)
+                serializer.save()
+                Code4DigitSalesman.objects.get(email = request.data['email']).delete()
+                return Response({
+                    'result': True,
+                    'message': 'ثبت‌نام با موفقیت انجام شد.',
+                })
+        except serializers.ValidationError as e:
+            print(e)
             return Response({
                 'result': False,
                 'message': 'ثبت‌نام با خطا مواجه شد.'
@@ -379,13 +374,7 @@ class AddDiscount(APIView):
                 'message': 'اضافه کردن تخفیف با خطا مواجه شد.'
             })
         else:
-            c_product = serializer.save()
-            for i in range(copy['count']):
-                while True:
-                    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k = 6))
-                    if Discount.objects.filter(code = code).count() == 0:
-                        break
-                Discount.objects.create(candidate_product = c_product, code = code)
+            serializer.save()
             return Response({
                 'result': True,
                 'message': 'اضافه کردن تخفیف با موفقیت انجام شد.'
@@ -544,6 +533,7 @@ class DiscountToCustomer(APIView):
 class EditSalesmanProfileView(APIView):
     permission_classes = []
 
+    @transaction.atomic
     def post(self, request):
         salesman = Salesman.objects.get(user__email = request.data['email'])
         if 'old_password' in request.data:
@@ -553,31 +543,25 @@ class EditSalesmanProfileView(APIView):
                     'result': False,
                     'message': 'رمز وارد شده صحیح نیست.'
                 })
-        serializer = UserSerializer(salesman.user, request.data, partial = True)
-        if not serializer.is_valid():
-            print(serializer.errors)
-            return Response({
-                'result': False,
-                'message': 'ویرایش اطلاعات با خطا مواجه شد.'
-            })
-        else:
-            serializer.save()
-            print("%%%%%%%%%%%")
-            print(request.data)
-            if 'avatar' in request.data:
-                sserializer = SalesmanSerializer(salesman, request.data, partial = True)
-                if not sserializer.is_valid():
-                    print(sserializer.errors)
-                    return Response({
-                        'result': False,
-                        'message': 'ویرایش اطلاعات با خطا مواجه شد.'
-                    })
-                else:
-                    sserializer.save()
+        try:
+            with transaction.atomic():
+                serializer = UserSerializer(salesman.user, request.data, partial = True)
+                serializer.is_valid(raise_exception = True)
+                serializer.save()
+                if 'avatar' in request.data:
+                    serializer = SalesmanSerializer(salesman, request.data, partial = True)
+                    serializer.is_valid(raise_exception = True)
+                    serializer.save()
                     return Response({
                         'result': True,
                         'message': 'ویرایش اطلاعات با موفقیت انجام شد.'
                     })
+        except serializers.ValidationError as e:
+            print(e)
+            return Response({
+                'result': False,
+                'message': 'ویرایش اطلاعات با خطا مواجه شد.'
+            })
 
 
 class test(APIView):
@@ -621,10 +605,17 @@ class getShops(APIView):
         username = request.data['username']
 
 
+class MyPoll(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
+
+
 class AddPoll(APIView):
     permission_classes = []
 
-    def post(self, request, Format = None) -> Response:
+    def post(self, request) -> Response:
         """
         TODO
         @param request:
@@ -808,22 +799,32 @@ class SubmitPoll(APIView):
         poll = Poll.objects.get(id = request.data['poll_id'])
         if 'linear_scale_answer' in request.data:
             linear_poll = poll.linear_scale_poll
+            print(request.data['linear_scale_answer'])
             customer.linear_scale_poll_answers.add(linear_poll, through_defaults = {
                 'answer': int(request.data['linear_scale_answer'])})
+            poll_ans = LinearScalePollAnswer.objects.get(customer = customer, poll = poll)
+            poll_ans.poll_answer.completed = True
+            poll_ans.save()
+
         elif 'short_answer_text' in request.data:
             short_poll = poll.short_answer_poll
             customer.short_answer_poll_answers.add(short_poll, through_defaults = {
                 'answer_text': request.data['short_answer_text']
             })
+            poll_ans = ShortAnswerPollAnswer.objects.get(customer = customer, poll = poll)
+            poll_ans.poll_answer.completed = True
+            poll_ans.save()
         elif 'paragraph_text' in request.data:
             paragraph_poll = poll.paragraph_poll
-            customer.paragraph_poll_amnswers.add(paragraph_poll, through_defaults = {
+            customer.paragraph_poll_answers.add(paragraph_poll, through_defaults = {
                 'answer_text': request.data['paragraph_text']
             })
+            poll_ans = ParagraphPollAnswer.objects.get(customer = customer, poll = poll)
+            poll_ans.poll_answer.completed = True
+            poll_ans.save()
         elif 'check_box_answer' in request.data:
             checkbox_poll = poll.checkbox_poll
             answers = request.data['checkbox_answer'][1:-1].split(',')
-            # print(answers)
             answer = CheckBoxPollAnswer.objects.create(customer = customer, checkbox_poll = checkbox_poll)
             for ans in answers:
                 answer.options.add(checkbox_poll.options.get(index = int(ans)))
@@ -855,6 +856,13 @@ class PollToCustomer(APIView):
         poll_count += customer.checkbox_poll_answers.filter(shop = shop).filter(shop = shop).count()
         poll_count += customer.multiple_choice_poll_answers.filter(shop = shop).count()
         poll_count += customer.paragraph_poll_answers.filter(shop = shop).count()
+        polls_of_customer = PollAnswer.objects.filter(Q(short_answer_poll__customer = customer) |
+                                                      Q(multiple_choice_poll__customer = customer) |
+                                                      Q(paragraph_poll__customer = customer) |
+                                                      Q(linear_scale_poll__customer = customer) |
+                                                      Q(checkbox_poll__customer = customer))
+
+
         # if 50 <= poll_count:
         # poll = Poll.objects.filter(importance = 10, exp_date__gte = timezone.now(), shop=shop)
         # elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() == 0):

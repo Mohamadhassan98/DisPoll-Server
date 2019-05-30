@@ -1,6 +1,5 @@
 from django.contrib.auth.models import AbstractUser, Permission
 from django.db import models
-from django.utils import timezone
 
 
 class City(models.Model):
@@ -22,18 +21,17 @@ class CustomUser(AbstractUser):
     gender = models.CharField(max_length = 1, choices = GENDER, null = True, blank = True)
     location = models.CharField(max_length = 100, null = True, blank = True)
     phone_number = models.CharField(max_length = 13, unique = True)
-    city = models.ForeignKey(City, on_delete = models.CASCADE, related_name = 'users', null = True,
-                             blank = True)  # Not Null
+    city = models.ForeignKey(City, on_delete = models.CASCADE, related_name = 'users', null = True, blank = True)
 
 
 # noinspection PyUnusedLocal
-def upload_to_path(instance, filename):
+def upload_salesman_to_path(instance, filename):
     return 'Salesman/' + str(instance.user.username) + '.jpg'
 
 
 class Salesman(models.Model):
     user = models.OneToOneField(CustomUser, on_delete = models.CASCADE, related_name = 'salesman')
-    avatar = models.ImageField(null = True, upload_to = upload_to_path,
+    avatar = models.ImageField(null = True, upload_to = upload_salesman_to_path,
                                default = 'Salesman/antihippopotomonstrosesquippedaliophobiaantihippopotomonstrosesquippedaliophobiaantihippopotomonstrosesquippedaliophobiaantihippopotomonstrosesquippedaliophobia.jpg')
 
     def check_password(self, raw_password):
@@ -44,16 +42,27 @@ class ShopKind(models.Model):
     name = models.CharField(max_length = 50)
 
 
+# noinspection PyUnusedLocal
+def upload_shop_to_path(instance, filename):
+    return 'Shop/shop_' + str(instance.business_license_id) + '.jpg'
+
+
+# noinspection PyUnusedLocal
+def upload_license_to_path(instance, filename):
+    return 'Business-License/license_' + str(instance.business_license_id) + '.jpg'
+
+
 class Shop(models.Model):
-    salesman = models.ForeignKey(Salesman, on_delete = models.CASCADE, related_name = 'shops', null = True)
+    salesman = models.ForeignKey(Salesman, on_delete = models.CASCADE, related_name = 'shops')
+    business_license_id = models.CharField(max_length = 8)
     address = models.TextField()
     city = models.ForeignKey(City, on_delete = models.CASCADE, related_name = 'shops', null = True)
-    business_license = models.ImageField(null = True, blank = True)
+    business_license = models.ImageField(upload_to = upload_license_to_path)
     location = models.CharField(max_length = 50, blank = True, null = True)
     phone_number = models.CharField(max_length = 11)
     name = models.CharField(max_length = 50)
-    shop_kind = models.ForeignKey(ShopKind, on_delete = models.CASCADE, related_name = 'shops', null = True)  # NOT NULL
-    picture = models.ImageField(blank = True, null = True)
+    shop_kind = models.ForeignKey(ShopKind, on_delete = models.CASCADE, related_name = 'shops')
+    picture = models.ImageField(upload_to = upload_shop_to_path, default = 'Shop/default.jpg')
 
 
 class Poll(models.Model):
@@ -118,11 +127,9 @@ class Customer(models.Model):
 class PollAnswer(models.Model):
     completed = models.BooleanField(default = False)
 
-    class Meta:
-        abstract = True
 
-
-class ShortAnswerPollAnswer(PollAnswer):
+class ShortAnswerPollAnswer(models.Model):
+    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'short_answer_poll')
     answer_text = models.CharField(max_length = 100)
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'short_answer_poll_answer')
     poll = models.ForeignKey(ShortAnswerPoll, on_delete = models.CASCADE, related_name = 'short_answer_poll_answer')
@@ -134,19 +141,22 @@ class CheckBoxOption(models.Model):
     poll = models.ForeignKey(CheckBoxPoll, on_delete = models.CASCADE, related_name = 'options')
 
 
-class CheckBoxPollAnswer(PollAnswer):
+class CheckBoxPollAnswer(models.Model):
+    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'checkbox_poll')
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'checkbox_poll_answer')
     checkbox_poll = models.ForeignKey(CheckBoxPoll, on_delete = models.CASCADE, related_name = 'checkbox_poll_answer')
     options = models.ManyToManyField(CheckBoxOption, related_name = 'answers')
 
 
-class ParagraphPollAnswer(PollAnswer):
+class ParagraphPollAnswer(models.Model):
+    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'paragraph_poll')
     answer_text = models.TextField()
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'paragraph_poll_answer')
     poll = models.ForeignKey(ParagraphPoll, on_delete = models.CASCADE, related_name = 'paragraph_poll_answer')
 
 
-class LinearScalePollAnswer(PollAnswer):
+class LinearScalePollAnswer(models.Model):
+    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'linear_scale_poll')
     answer = models.IntegerField()
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answer')
     poll = models.ForeignKey(LinearScalePoll, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answer')
@@ -158,7 +168,8 @@ class MultipleChoiceOption(models.Model):
     poll = models.ForeignKey(MultipleChoicePoll, on_delete = models.CASCADE, related_name = 'options')
 
 
-class MultipleChoiceAnswer(PollAnswer):
+class MultipleChoiceAnswer(models.Model):
+    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'multiple_choice_poll')
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'multiple_choice_answer')
     multiple_choice = models.ForeignKey(MultipleChoicePoll, on_delete = models.CASCADE,
                                         related_name = 'multiple_choice_answers')
@@ -185,15 +196,15 @@ class CandidateProduct(models.Model):
     product_name = models.CharField(max_length = 50, null = True)
     product_barcode = models.ImageField(null = True)
     shop = models.ForeignKey(Shop, on_delete = models.CASCADE, related_name = 'discount')
-    expire_date = models.IntegerField(default = 5)
+    expire_date = models.DateField()
 
 
 class Discount(models.Model):
-    active = models.BooleanField(default = False)
+    active = models.BooleanField(default = True)
     code = models.CharField(max_length = 5, unique = True)
-    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discount', null = True)
-    expire_date = models.DateField(default = timezone.now)
-    candidate_product = models.ForeignKey(CandidateProduct, on_delete = models.CASCADE, related_name = 'discount')
+    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discount')
+    candidate_product = models.ForeignKey(CandidateProduct, on_delete = models.CASCADE, related_name = 'discounts')
+    expire_date = models.IntegerField(default = 5)
 
 
 class Code4DigitSalesman(models.Model):
