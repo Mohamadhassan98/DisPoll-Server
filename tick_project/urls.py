@@ -16,11 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from Tick_server.views import SignUpFirstCustomer, SignUpSecondCustomer, ResendCodeCustomer, LoginCustomer, \
-    SignUpFinalCustomer, ActiveDiscountListView, \
-    InactiveDiscountListView, SignUpFirstSalesman, SignUpSecondSalesman, ResendCodeSalesman, SignUpFinalSalesman, \
-    LoginSalesman, AddShop, AddDiscount, DiscountToCustomer, GetCity, GetShopKind, EditCustomerProfile, \
-    EditSalesmanProfileView, AddPoll
+from Tick_server.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -44,5 +40,5 @@ urlpatterns = [
     path('shop-kind/<int:pk>/', GetShopKind.as_view()),
     path('edit-profile-salesman/', EditSalesmanProfileView.as_view()),
     path('add-poll/', AddPoll.as_view()),
+    path('submit-poll/', SubmitPoll.as_view())
 ]
-

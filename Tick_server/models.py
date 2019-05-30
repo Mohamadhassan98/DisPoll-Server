@@ -70,7 +70,7 @@ class Poll(models.Model):
         (10, 10)
     )
     importance = models.IntegerField(choices = IMPORTANCE)
-    remaining_time = models.IntegerField()
+    expire_date = models.DateField()
     text = models.TextField()
     shop = models.ForeignKey(Shop, on_delete = models.CASCADE, related_name = 'polls')
 
@@ -90,18 +90,8 @@ class MultipleChoicePoll(models.Model):
     poll = models.OneToOneField(Poll, related_name = 'multiple_choice_poll', on_delete = models.CASCADE)
 
 
-class MultipleChoiceOption(models.Model):
-    answer_text = models.CharField(max_length = 100)
-    poll = models.ForeignKey(MultipleChoicePoll, on_delete = models.CASCADE, related_name = 'options')
-
-
 class CheckBoxPoll(models.Model):
     poll = models.OneToOneField(Poll, related_name = 'checkbox_poll', on_delete = models.CASCADE)
-
-
-class CheckBoxOption(models.Model):
-    answer_text = models.CharField(max_length = 100)
-    poll = models.ForeignKey(CheckBoxPoll, on_delete = models.CASCADE, related_name = 'options')
 
 
 class ShortAnswerPoll(models.Model):
@@ -114,11 +104,11 @@ class Customer(models.Model):
                                                        related_name = 'customers')
     paragraph_poll_answers = models.ManyToManyField(ParagraphPoll, through = 'ParagraphPollAnswer',
                                                     related_name = 'customers')
-    checkbox_poll_answers = models.ManyToManyField(CheckBoxOption, through = 'CheckBoxPollAnswer',
+    checkbox_poll_answers = models.ManyToManyField(CheckBoxPoll, through = 'CheckBoxPollAnswer',
                                                    related_name = 'customers')
     short_answer_poll_answers = models.ManyToManyField(ShortAnswerPoll, through = 'ShortAnswerPollAnswer',
                                                        related_name = 'customers')
-    multiple_choice_poll_answers = models.ManyToManyField(MultipleChoiceOption, through = 'MultipleChoiceAnswer',
+    multiple_choice_poll_answers = models.ManyToManyField(MultipleChoicePoll, through = 'MultipleChoiceAnswer',
                                                           related_name = 'customers')
 
     def check_password(self, raw_password):
@@ -138,9 +128,16 @@ class ShortAnswerPollAnswer(PollAnswer):
     poll = models.ForeignKey(ShortAnswerPoll, on_delete = models.CASCADE, related_name = 'short_answer_poll_answer')
 
 
+class CheckBoxOption(models.Model):
+    index = models.IntegerField()
+    answer_text = models.CharField(max_length = 100)
+    poll = models.ForeignKey(CheckBoxPoll, on_delete = models.CASCADE, related_name = 'options')
+
+
 class CheckBoxPollAnswer(PollAnswer):
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'checkbox_poll_answer')
-    option = models.ForeignKey(CheckBoxOption, on_delete = models.CASCADE, related_name = 'checkbox_poll_answer')
+    checkbox_poll = models.ForeignKey(CheckBoxPoll, on_delete = models.CASCADE, related_name = 'checkbox_poll_answer')
+    options = models.ManyToManyField(CheckBoxOption, related_name = 'answers')
 
 
 class ParagraphPollAnswer(PollAnswer):
@@ -155,10 +152,18 @@ class LinearScalePollAnswer(PollAnswer):
     poll = models.ForeignKey(LinearScalePoll, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answer')
 
 
+class MultipleChoiceOption(models.Model):
+    index = models.IntegerField()
+    answer_text = models.CharField(max_length = 100)
+    poll = models.ForeignKey(MultipleChoicePoll, on_delete = models.CASCADE, related_name = 'options')
+
+
 class MultipleChoiceAnswer(PollAnswer):
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'multiple_choice_answer')
+    multiple_choice = models.ForeignKey(MultipleChoicePoll, on_delete = models.CASCADE,
+                                        related_name = 'multiple_choice_answers')
     option = models.ForeignKey(MultipleChoiceOption, on_delete = models.CASCADE,
-                               related_name = 'multiple_choice_answer')
+                               related_name = 'answers')
 
 
 class Code4Digit(models.Model):

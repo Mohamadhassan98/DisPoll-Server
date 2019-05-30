@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from Tick_server.models import Code4Digit, Code4DigitSalesman
+from Tick_server.models import Code4Digit, Code4DigitSalesman, CheckBoxPollAnswer, MultipleChoiceAnswer
 from Tick_server.serializers import *
 
 
@@ -101,7 +101,7 @@ class SignUpFinalCustomer(APIView):
         else:
             user = serializer.save()
             Customer.objects.create(user = user)
-            token, _ = Token.objects.get_or_create(user=user)
+            token, _ = Token.objects.get_or_create(user = user)
             Code4Digit.objects.get(phone_number = copy['phone_number']).delete()
             return Response({
                 'result': True,
@@ -545,7 +545,7 @@ class EditSalesmanProfileView(APIView):
     permission_classes = []
 
     def post(self, request):
-        salesman = Salesman.objects.get(user__email=request.data['email'])
+        salesman = Salesman.objects.get(user__email = request.data['email'])
         if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
             if not salesman.check_password(old_password[0]):
@@ -622,6 +622,8 @@ class getShops(APIView):
 
 
 class AddPoll(APIView):
+    permission_classes = []
+
     def post(self, request, Format = None) -> Response:
         """
         TODO
@@ -633,29 +635,90 @@ class AddPoll(APIView):
         if type_poll[0] == 'CheckBoxPoll':
             answer_texts = request.data.pop('answer_texts')
             answer_texts = (answer_texts[0]).split(',')
-            serializer = CheckBoxPollSerializer(data = request.data)
-            if not serializer.is_valid():
-                print(serializer.errors)
+            poll_serializer = PollSerializer(data = request.data)
+            if not poll_serializer.is_valid():
+                print(poll_serializer.errors)
                 return Response({
                     'result': False,
                     'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
                 })
-            poll = serializer.save()
+            poll = poll_serializer.save()
+            data = {
+                'poll': poll.pk
+            }
+            checkbox_serializer = CheckBoxPollSerializer(data = data)
+            if not checkbox_serializer.is_valid():
+                print(checkbox_serializer.errors)
+                return Response({
+                    'result': False,
+                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                })
+            checkbox_poll = checkbox_serializer.save()
+            index = 0
             temp = []
             for ans in answer_texts:
                 data = {
+                    'index': index,
                     'answer_text': ans,
-                    'poll': poll.pk
+                    'poll': checkbox_poll.pk
                 }
                 print(data)
                 option_serializer = CheckBoxPollOptionSerializer(data = data)
                 temp.append(option_serializer)
                 if not option_serializer.is_valid():
-                    print(serializer.errors)
+                    print(option_serializer.errors)
                     return Response({
                         'result': False,
                         'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
                     })
+                index += 1
+            for ans in temp:
+                ans.save()
+            return Response({
+                'result': True,
+                'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
+            })
+        elif type_poll[0] == 'MultipleChoicePoll':
+            answer_texts = request.data.pop('answer_texts')
+            answer_texts = (answer_texts[0]).split(',')
+            poll_serializer = PollSerializer(data = request.data)
+            if not poll_serializer.is_valid():
+                print(poll_serializer.errors)
+                return Response({
+                    'result': False,
+                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                })
+            poll = poll_serializer.save()
+            data = {
+                'poll': poll.pk
+            }
+            multiple_serializer = MultipleChoicePollSerializer(data = data)
+            if not multiple_serializer.is_valid():
+                print(multiple_serializer.errors)
+                return Response({
+                    'result': False,
+                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                })
+            multiple_poll = multiple_serializer.save()
+            temp = []
+            index = 0
+            for ans in answer_texts:
+                data = {
+                    'index': index,
+                    'answer_text': ans,
+                    'poll': multiple_poll.pk
+                }
+                print(data)
+                option_serializer = MultipleChoiceOptionSerializer(data = data)
+                temp.append(option_serializer)
+                if not option_serializer.is_valid():
+                    print("*****")
+                    print(option_serializer.errors)
+                    return Response({
+                        'result': False,
+                        'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                    })
+                index += 1
             for ans in temp:
                 ans.save()
             return Response({
@@ -663,77 +726,152 @@ class AddPoll(APIView):
                 'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
             })
         elif type_poll[0] == 'ParagraphPoll':
-            serializer = ParagraphPollSerializer(data = request.data)
-            if not serializer.is_valid():
-                print(serializer.errors)
+            poll_serializer = PollSerializer(data = request.data)
+            if not poll_serializer.is_valid():
+                print(poll_serializer.errors)
                 return Response({
                     'result': False,
                     'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
                 })
             else:
-                serializer.save()
-                return Response({
-                    'result': True,
-                    'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
-                })
-        elif type_poll[0] == 'LinearScalePoll':
-            serializer = LinearScalePollSerializer(data = request.data)
-            if not serializer.is_valid():
-                print(serializer.errors)
-                return Response({
-                    'result': False,
-                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                })
-            else:
-                serializer.save()
-                return Response({
-                    'result': True,
-                    'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
-                })
-
-        elif type_poll[0] == 'MultipleChoicePoll':
-            answer_texts = request.data.pop('answer_texts')
-            answer_texts = (answer_texts[0]).split(',')
-            serializer = MultipleChoicePollSerializer(data = request.data)
-            if not serializer.is_valid():
-                print(serializer.errors)
-                return Response({
-                    'result': False,
-                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                })
-            poll = serializer.save()
-            temp = []
-            for ans in answer_texts:
+                poll = poll_serializer.save()
                 data = {
-                    'answer_text': ans,
                     'poll': poll.pk
                 }
-                print(data)
-                option_serializer = MultipleChoiceOptionSerializer(data = data)
-                temp.append(option_serializer)
-                if not option_serializer.is_valid():
-                    print(serializer.errors)
+                paragraph_serializer = ParagraphPollSerializer(data = data)
+                if not paragraph_serializer.is_valid():
+                    print(paragraph_serializer.errors)
                     return Response({
                         'result': False,
                         'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
                     })
-            for ans in temp:
-                ans.save()
-            return Response({
-                'result': True,
-                'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
-            })
-        else:
-            serializer = ShortAnswerSerializer(data = request.data)
-            if not serializer.is_valid():
-                print(serializer.errors)
+                else:
+                    return Response({
+                        'result': True,
+                        'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
+                    })
+        elif type_poll[0] == 'LinearScalePoll':
+            poll_serializer = PollSerializer(data = request.data)
+            if not poll_serializer.is_valid():
+                print(poll_serializer.errors)
                 return Response({
                     'result': False,
                     'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
                 })
             else:
-                serializer.save()
+                poll = poll_serializer.save()
+                request.data._mutable = True
+                request.data.update({'poll': poll.pk})
+                linear_serializer = LinearScalePollSerializer(data = request.data)
+                if not linear_serializer.is_valid():
+                    print(linear_serializer.errors)
+                    return Response({
+                        'result': False,
+                        'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                    })
+                else:
+                    linear_serializer.save()
+                    return Response({
+                        'result': True,
+                        'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
+                    })
+        else:
+            poll_serializer = PollSerializer(data = request.data)
+            if not poll_serializer.is_valid():
+                print(poll_serializer.errors)
                 return Response({
-                    'result': True,
-                    'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
+                    'result': False,
+                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
                 })
+            else:
+                poll = poll_serializer.save()
+                short_answer_serializer = ShortAnswerSerializer(data = request.data)
+                if not short_answer_serializer.is_valid():
+                    print(short_answer_serializer.errors)
+                    return Response({
+                        'result': False,
+                        'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                    })
+                else:
+                    return Response({
+                        'result': True,
+                        'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
+                    })
+
+
+# noinspection DjangoOrm, PyMethodMayBeStatic
+class SubmitPoll(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
+        poll = Poll.objects.get(id = request.data['poll_id'])
+        if 'linear_scale_answer' in request.data:
+            linear_poll = poll.linear_scale_poll
+            customer.linear_scale_poll_answers.add(linear_poll, through_defaults = {
+                'answer': int(request.data['linear_scale_answer'])})
+        elif 'short_answer_text' in request.data:
+            short_poll = poll.short_answer_poll
+            customer.short_answer_poll_answers.add(short_poll, through_defaults = {
+                'answer_text': request.data['short_answer_text']
+            })
+        elif 'paragraph_text' in request.data:
+            paragraph_poll = poll.paragraph_poll
+            customer.paragraph_poll_amnswers.add(paragraph_poll, through_defaults = {
+                'answer_text': request.data['paragraph_text']
+            })
+        elif 'check_box_answer' in request.data:
+            checkbox_poll = poll.checkbox_poll
+            answers = request.data['checkbox_answer'][1:-1].split(',')
+            # print(answers)
+            answer = CheckBoxPollAnswer.objects.create(customer = customer, checkbox_poll = checkbox_poll)
+            for ans in answers:
+                answer.options.add(checkbox_poll.options.get(index = int(ans)))
+            answer.save()
+        else:
+            multiple_choice_poll = poll.multiple_choice_poll
+            index = int(request.data['multiple_choice_answer'])
+            answer = MultipleChoiceAnswer(customer = customer, multiple_choice = multiple_choice_poll)
+            answer.option = multiple_choice_poll.options.get(index = index)
+            answer.save()
+
+        return Response({
+            'result': True,
+            'message': 'نظر ثبت شد.'
+        })
+
+
+class PollToCustomer(APIView):
+    def post(self, request):
+        """
+        TODO
+        @param request:
+        @return:
+        """
+        shop = Shop.objects.get(id = request.data['shop_id'])
+        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
+        poll_count = customer.linear_scale_poll_answers.filter(shop = shop).count()
+        poll_count += customer.short_answer_poll_answers.filter(shop = shop).count()
+        poll_count += customer.checkbox_poll_answers.filter(shop = shop).filter(shop = shop).count()
+        poll_count += customer.multiple_choice_poll_answers.filter(shop = shop).count()
+        poll_count += customer.paragraph_poll_answers.filter(shop = shop).count()
+        # if 50 <= poll_count:
+        # poll = Poll.objects.filter(importance = 10, exp_date__gte = timezone.now(), shop=shop)
+        # elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() == 0):
+        #     my_discounts = discounts.filter(percent__lte = 90, percent__gt = 80)
+        # elif 40 <= poll_count < 45 or (my_discounts and my_discounts.count() == 0):
+        #     my_discounts = discounts.filter(percent__lte = 80, percent__gt = 70)
+        # elif 35 <= poll_count < 40 or (my_discounts and my_discounts.count() == 0):
+        #     my_discounts = discounts.filter(percent__lte = 70, percent__gt = 60)
+        # elif 30 <= poll_count < 35 or (my_discounts and my_discounts.count() == 0):
+        #     my_discounts = discounts.filter(percent__lte = 60, percent__gt = 50)
+        # elif 25 <= poll_count < 30 or (my_discounts and my_discounts.count() == 0):
+        #     my_discounts = discounts.filter(percent__lte = 50, percent__gt = 40)
+        # elif 20 <= poll_count < 25 or (my_discounts and my_discounts.count() == 0):
+        #     my_discounts = discounts.filter(percent__lte = 40, percent__gt = 30)
+        # elif 15 <= poll_count < 20 or (my_discounts and my_discounts.count() == 0):
+        #     my_discounts = discounts.filter(percent__lte = 30, percent__gt = 20)
+        # elif 10 <= poll_count < 15 or (my_discounts and my_discounts.count() == 0):
+        #     my_discounts = discounts.filter(percent__lte = 20, percent__gt = 10)
+        # elif poll_count < 10 or (my_discounts and my_discounts.count() == 0):
+        #     my_discounts = discounts.filter(percent__lte = 10)
