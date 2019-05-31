@@ -834,8 +834,8 @@ class SubmitPoll(APIView):
         else:
             multiple_choice_poll = poll.multiple_choice_poll
             index = int(request.data['multiple_choice_answer'])
-            answer = MultipleChoiceAnswer(poll_answer = poll_answer, customer = customer,
-                                          multiple_choice = multiple_choice_poll)
+            answer = MultipleChoiceAnswer.objects.create(poll_answer = poll_answer, customer = customer,
+                                                         multiple_choice = multiple_choice_poll)
             answer.option = multiple_choice_poll.options.get(index = index)
             answer.save()
             poll_answer.completed = True
