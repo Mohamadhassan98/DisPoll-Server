@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Tick_server.models import Code4Digit, Code4DigitSalesman, CheckBoxPollAnswer, MultipleChoiceAnswer, PollAnswer, \
-    LinearScalePollAnswer, ShortAnswerPollAnswer, ParagraphPollAnswer
+    LinearScalePollAnswer, ShortAnswerPollAnswer
 from Tick_server.serializers import *
 
 
@@ -795,46 +795,51 @@ class SubmitPoll(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        poll_answer = PollAnswer.objects.create(completed = False)
         customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
         poll = Poll.objects.get(id = request.data['poll_id'])
         if 'linear_scale_answer' in request.data:
             linear_poll = poll.linear_scale_poll
             print(request.data['linear_scale_answer'])
-            customer.linear_scale_poll_answers.add(linear_poll, through_defaults = {
-                'answer': int(request.data['linear_scale_answer'])})
-            poll_ans = LinearScalePollAnswer.objects.get(customer = customer, poll = poll)
-            poll_ans.poll_answer.completed = True
-            poll_ans.save()
+            LinearScalePollAnswer.objects.create(poll_answer = poll_answer, customer = customer, poll = linear_poll,
+                                                 answer = int(request.data['linear_scale_answer']))
+            poll_answer.completed = True
+            poll_answer.save()
 
         elif 'short_answer_text' in request.data:
             short_poll = poll.short_answer_poll
-            customer.short_answer_poll_answers.add(short_poll, through_defaults = {
-                'answer_text': request.data['short_answer_text']
-            })
-            poll_ans = ShortAnswerPollAnswer.objects.get(customer = customer, poll = poll)
-            poll_ans.poll_answer.completed = True
-            poll_ans.save()
+            print(request.data['linear_scale_answer'])
+            ShortAnswerPollAnswer.objects.create(poll_answer = poll_answer, customer = customer, poll = short_poll,
+                                                 answer = request.data['short_answer_text'])
+            poll_answer.completed = True
+            poll_answer.save()
+
         elif 'paragraph_text' in request.data:
             paragraph_poll = poll.paragraph_poll
-            customer.paragraph_poll_answers.add(paragraph_poll, through_defaults = {
-                'answer_text': request.data['paragraph_text']
-            })
-            poll_ans = ParagraphPollAnswer.objects.get(customer = customer, poll = poll)
-            poll_ans.poll_answer.completed = True
-            poll_ans.save()
+            ShortAnswerPollAnswer.objects.create(poll_answer = poll_answer, customer = customer, poll = paragraph_poll,
+                                                 answer = request.data['paragraph_text'])
+            poll_answer.completed = True
+            poll_answer.save()
         elif 'check_box_answer' in request.data:
             checkbox_poll = poll.checkbox_poll
-            answers = request.data['checkbox_answer'][1:-1].split(',')
-            answer = CheckBoxPollAnswer.objects.create(customer = customer, checkbox_poll = checkbox_poll)
+            answers = request.data['check_box_answer'][1:-1].split(',')
+            print(answers)
+            answer = CheckBoxPollAnswer.objects.create(poll_answer = poll_answer, customer = customer,
+                                                       checkbox_poll = checkbox_poll)
             for ans in answers:
                 answer.options.add(checkbox_poll.options.get(index = int(ans)))
             answer.save()
+            poll_answer.completed = True
+            poll_answer.save()
         else:
             multiple_choice_poll = poll.multiple_choice_poll
             index = int(request.data['multiple_choice_answer'])
-            answer = MultipleChoiceAnswer(customer = customer, multiple_choice = multiple_choice_poll)
+            answer = MultipleChoiceAnswer(poll_answer = poll_answer, customer = customer,
+                                          multiple_choice = multiple_choice_poll)
             answer.option = multiple_choice_poll.options.get(index = index)
             answer.save()
+            poll_answer.completed = True
+            poll_answer.save()
 
         return Response({
             'result': True,
@@ -861,7 +866,6 @@ class PollToCustomer(APIView):
                                                       Q(paragraph_poll__customer = customer) |
                                                       Q(linear_scale_poll__customer = customer) |
                                                       Q(checkbox_poll__customer = customer))
-
 
         # if 50 <= poll_count:
         # poll = Poll.objects.filter(importance = 10, exp_date__gte = timezone.now(), shop=shop)
