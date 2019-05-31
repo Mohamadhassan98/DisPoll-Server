@@ -37,7 +37,7 @@ urlpatterns = [
     path('add-discount/', AddDiscount.as_view()),
     path('discount-to-customer/', DiscountToCustomer.as_view()),
     path('cities/', GetCities.as_view()),
-    path('shop-kind/', GetShopKinds.as_view()),
+    path('shop-kinds/', GetShopKinds.as_view()),
     path('edit-profile-salesman/', EditSalesmanProfileView.as_view()),
     path('add-poll/', AddPoll.as_view()),
     path('submit-poll/', SubmitPoll.as_view()),

@@ -1,3 +1,5 @@
+import string
+
 from django.contrib.auth import login
 from django.core.files import File
 from django.db import transaction
@@ -351,13 +353,13 @@ class AddDiscount(APIView):
         @return: Response showing whether adding discount is successful or not
         """
         copy = request.data.copy()
+        days = int(copy.pop('days')[0])
         count = int(copy.pop('count')[0])
         print(type(count))
         percent = int(copy.pop('percent')[0])
-        exp = int(copy.pop('expire_date')[0])
         copy.update({'count': count})
         copy.update({'percent': percent})
-        copy.update({'expire_date': exp})
+        copy.update({'days': days})
         serializer = CandidateProductSerializer(data = copy)
         if not serializer.is_valid():
             print(serializer.errors)
@@ -490,25 +492,34 @@ class DiscountToCustomer(APIView):
         discounts = CandidateProduct.objects.filter(shop = shop, count__gt = 0)
         my_discounts = None
         if 50 <= poll_count:
-            my_discounts = discounts.filter(percent__lte = 100, percent__gt = 90)
+            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 100,
+                                            percent__gt = 90)
         elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte = 90, percent__gt = 80)
+            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 90,
+                                            percent__gt = 80)
         elif 40 <= poll_count < 45 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte = 80, percent__gt = 70)
+            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 80,
+                                            percent__gt = 70)
         elif 35 <= poll_count < 40 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte = 70, percent__gt = 60)
+            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 70,
+                                            percent__gt = 60)
         elif 30 <= poll_count < 35 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte = 60, percent__gt = 50)
+            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 60,
+                                            percent__gt = 50)
         elif 25 <= poll_count < 30 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte = 50, percent__gt = 40)
+            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 50,
+                                            percent__gt = 40)
         elif 20 <= poll_count < 25 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte = 40, percent__gt = 30)
+            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 40,
+                                            percent__gt = 30)
         elif 15 <= poll_count < 20 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte = 30, percent__gt = 20)
+            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 30,
+                                            percent__gt = 20)
         elif 10 <= poll_count < 15 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte = 20, percent__gt = 10)
+            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 20,
+                                            percent__gt = 10)
         elif poll_count < 10 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(percent__lte = 10)
+            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 10)
         else:
             return Response({
                 'result': False,
@@ -517,11 +528,17 @@ class DiscountToCustomer(APIView):
         import random
         index = random.randint(0, len(my_discounts))
         product = my_discounts[index]
-        discount = Discount.objects.filter(candidate_product = product, customer__isnull = True)[0]
-        discount.update(customer = customer, active = True)
+        code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
+        while Discount.objects.filter(code = code).count() != 0:
+            code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
+        discount = Discount.objects.create(code = code, active = True, candidate_product = product, customer = customer)
+        product.count -= 1
+        product.save()
+        serializer = DiscountSerializer(discount)
         return Response({
             'result': True,
-            'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.'
+            'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.',
+            'discount': serializer.data
         })
 
 

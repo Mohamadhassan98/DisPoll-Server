@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, Permission
 from django.db import models
+from django.utils import timezone
 
 
 class City(models.Model):
@@ -205,6 +206,7 @@ class CandidateProduct(models.Model):
     product_barcode = models.ImageField(null = True)
     shop = models.ForeignKey(Shop, on_delete = models.CASCADE, related_name = 'discount')
     expire_date = models.DateField()
+    days = models.IntegerField(default = 5)
 
 
 class Discount(models.Model):
@@ -212,7 +214,7 @@ class Discount(models.Model):
     code = models.CharField(max_length = 5, unique = True)
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discount')
     candidate_product = models.ForeignKey(CandidateProduct, on_delete = models.CASCADE, related_name = 'discounts')
-    expire_date = models.IntegerField(default = 5)
+    start_date = models.DateField(default = timezone.now)
 
 
 class Code4DigitSalesman(models.Model):
