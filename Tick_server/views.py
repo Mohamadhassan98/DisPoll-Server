@@ -422,35 +422,32 @@ class InactiveDiscountListView(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-class GetCity(APIView):
+class GetCities(APIView):
     permission_classes = []
 
-    def get(self, pk) -> Response:
+    def get(self, request) -> Response:
         """
+        TODO
         Returns city corresponding requested I{id}.
         @param pk: id for requested city
         @return: Response showing whether city was found or not. If city was found, it will be returned respectively.
         """
-
-        try:
-            city = City.objects.get(id = pk)
-            serializer = CitySerializer(city)
-        except City.DoesNotExist:
-            return Response({
-                'result': False,
-                'message': 'شهر مورد نظر یافت نشد.'
-            })
+        cities = City.objects.all()
+        data = []
+        for city in cities:
+            data.append({'id': city.pk, 'name': city.name})
         return Response({
             'result': True,
-            'message': serializer.data
+            'message': 'نام شهرها',
+            'cities': data
         })
 
 
 # noinspection PyMethodMayBeStatic,PyUnusedLocal
-class GetShopKind(APIView):
+class GetShopKinds(APIView):
     permission_classes = []
 
-    def get(self, request, pk) -> Response:
+    def get(self, request) -> Response:
         """
         Returns ShopKind corresponding requested I{id}.
         @param request: Unused
@@ -458,23 +455,17 @@ class GetShopKind(APIView):
         @return: Response showing whether ShopKind was found or not. If ShopKind was found, it will be returned
         respectively.
         """
-
-        try:
-            shop_kind = ShopKind.objects.get(id = pk)
-            serializer = ShopKindSerializer(shop_kind)
-        except ShopKind.DoesNotExist:
-            return Response({
-                'result': False,
-                'message': 'نوع فروشگاه مورد نظر یافت نشد.'
-            })
+        data = []
+        shop_kinds = ShopKind.objects.all()
+        for kind in shop_kinds:
+            data.append({'id': kind.pk, 'name': kind.name})
         return Response({
             'result': True,
-            'message': serializer.data
+            'message': 'نام شهرها',
+            'shop_kinds': data
         })
 
 
-# TODO program a view that returns all discounts of a salesman
-# TODO program a view that allocates a discount to a customer from an specified shop's null customered discounts
 class DiscountToCustomer(APIView):
     def post(self, request) -> Response:
         """
@@ -852,35 +843,49 @@ class MyPolls(APIView):
                                         Q(short_answer_poll__short_answer_poll_answer__customer = customer,
                                           short_answer_poll__short_answer_poll_answer__poll_answer__completed = False) |
                                         Q(linear_scale_poll__linear_scale_poll_answer__customer = customer,
-                                          linear_scale_poll__linear_scale_poll_answer__poll_answer__completed = True) |
+                                          linear_scale_poll__linear_scale_poll_answer__poll_answer__completed = False) |
                                         Q(checkbox_poll__checkbox_poll_answer__customer = customer,
-                                          checkbox_poll__checkbox_poll_answer__poll_answer__completed = True) |
+                                          checkbox_poll__checkbox_poll_answer__poll_answer__completed = False) |
                                         Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
                                           multiple_choice_poll__multiple_choice_answers__poll_answer__completed = False))
         print("&&&")
         print(all_polls)
-        data = {'result': True,
-                'message': 'نظرسنجی های یک کاربر',
-                'polls': []
-                }
+        data = {
+            'result': True,
+            'message': 'نظرسنجی های یک کاربر',
+            'polls': []
+        }
         for poll in all_polls:
+            data_poll = {
+                'id': poll.pk,
+                'text': poll.text,
+                'shop': poll.shop.name,
+                'importance': poll.importance,
+                'expire_date': poll.expire_date,
+                'type_poll': poll.type_poll
+            }
             if poll.type_poll == "LinearScalePoll":
-                data['polls'].append({'text': poll.text})
-            elif poll.type_poll == 'ShortAnswerPoll':
-                data['polls'].append({'text': poll.text})
-            elif poll.type_poll == 'ParagraphPoll':
-                data['polls'].append({'text': poll.text})
+                linear_poll = poll.linear_scale_poll
+                data_poll.update({
+                    'choices_count': linear_poll.choices_count,
+                    'start': linear_poll.start,
+                    'step': linear_poll.step
+
+                })
             elif poll.type_poll == 'MultipleChoicePoll':
                 choices = []
                 for option in poll.multiple_choice_poll.options.all():
                     choices.append(option.answer_text)
-                data['polls'].append({'text': poll.text, 'choices': choices})
+                data_poll.update({'choices': choices})
 
             else:
                 choices = []
                 for option in poll.checkbox_poll.options.all():
                     choices.append(option.answer_text)
-                data['polls'].append({'text': poll.text, 'choices': choices})
+                data_poll.update({'choices': choices})
+
+            data['polls'].append(data_poll)
+
         return Response(data = data)
 
 
