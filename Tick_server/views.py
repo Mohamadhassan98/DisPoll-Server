@@ -482,14 +482,20 @@ class DiscountToCustomer(APIView):
         :param request:
         :return:
         """
-        username = request.data['username']
-        customer = Customer.objects.get(user__username = username)
-        shop = Shop.objects.get(id = request.data['shop_id'])
-        poll_count = customer.linear_scale_poll_answers.filter(shop = shop).count()
-        poll_count += customer.short_answer_poll_answers.filter(shop = shop).count()
-        poll_count += customer.checkbox_poll_answers.filter(shop = shop).count()
-        poll_count += customer.multiple_choice_poll_answers.filter(shop = shop).count()
-        poll_count += customer.paragraph_poll_answers.filter(shop = shop).count()
+        shop = Shop.objects.get(id = request.data['shop'])
+        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
+        my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answer__customer = customer,
+                                         paragraph_poll__paragraph_poll_answer__poll_answer__completed = True) |
+                                       Q(short_answer_poll__short_answer_poll_answer__customer = customer,
+                                         short_answer_poll__short_answer_poll_answer__poll_answer__completed = True) |
+                                       Q(linear_scale_poll__linear_scale_poll_answer__customer = customer,
+                                         linear_scale_poll__linear_scale_poll_answer__poll_answer__completed = True) |
+                                       Q(checkbox_poll__checkbox_poll_answer__customer = customer,
+                                         checkbox_poll__checkbox_poll_answer__poll_answer__completed = True) |
+                                       Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
+                                         multiple_choice_poll__multiple_choice_answers__poll_answer__completed = True))
+
+        poll_count = my_polls.filter(shop = shop).count()
         discounts = CandidateProduct.objects.filter(shop = shop, count__gt = 0)
         my_discounts = None
         if 50 <= poll_count:
@@ -518,7 +524,8 @@ class DiscountToCustomer(APIView):
                 'message': 'تخفیفی برای این فروشگاه یافت نشد.'
             })
         import random
-        product = random.sample(my_discounts, 1)[0]
+        index = random.randint(0, len(my_discounts))
+        product = my_discounts[index]
         discount = Discount.objects.filter(candidate_product = product, customer__isnull = True)[0]
         discount.update(customer = customer, active = True)
         return Response({
@@ -907,7 +914,7 @@ class PollToCustomer(APIView):
 
         poll_count = my_polls.filter(shop = shop).count()
         print(not_my_polls.all().count())
-        polls = []
+        polls = None
         if 50 <= poll_count:
             polls = not_my_polls.filter(importance = 10, expire_date__gte = timezone.now())
         elif 45 <= poll_count < 50 or (polls and polls.count() == 0):
@@ -928,6 +935,11 @@ class PollToCustomer(APIView):
             polls = not_my_polls.filter(importance = 2, expire_date__gte = timezone.now())
         elif poll_count < 10 or (polls and polls.count() == 0):
             polls = not_my_polls.filter(importance = 1, expire_date__gte = timezone.now())
+        else:
+            return Response({
+                'result': False,
+                'message': 'نظرسنجی ای یافت نشد.'
+            })
 
         print(polls)
         import random
