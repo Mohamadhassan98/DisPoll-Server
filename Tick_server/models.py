@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, Permission
 from django.db import models
 from django.utils import timezone
+import time
 
 
 class City(models.Model):
@@ -45,17 +46,16 @@ class ShopKind(models.Model):
 
 # noinspection PyUnusedLocal
 def upload_shop_to_path(instance, filename):
-    return 'Shop/shop_' + str(instance.business_license_id) + '.jpg'
+    return 'Shop/shop_' + str(time.time_ns()) + '.jpg'
 
 
 # noinspection PyUnusedLocal
 def upload_license_to_path(instance, filename):
-    return 'Business-License/license_' + str(instance.business_license_id) + '.jpg'
+    return 'Business-License/license_' + str(time.time_ns()) + '.jpg'
 
 
 class Shop(models.Model):
     salesman = models.ForeignKey(Salesman, on_delete = models.CASCADE, related_name = 'shops')
-    business_license_id = models.CharField(max_length = 8)
     address = models.TextField()
     city = models.ForeignKey(City, on_delete = models.CASCADE, related_name = 'shops', null = True)
     business_license = models.ImageField(upload_to = upload_license_to_path)
@@ -67,7 +67,7 @@ class Shop(models.Model):
 
 
 class Poll(models.Model):
-    TYPE_POLL = (
+    POLL_TYPE = (
         ('LinearScalePoll', 'LinearScalePoll'),
         ('CheckBoxPoll', 'CheckBoxPoll'),
         ('MultipleChoicePoll', 'MultipleChoicePoll'),
@@ -86,7 +86,7 @@ class Poll(models.Model):
         (9, 9),
         (10, 10)
     )
-    type_poll = models.CharField(choices = TYPE_POLL, max_length = 20)
+    poll_type = models.CharField(choices = POLL_TYPE, max_length = 20)
     importance = models.IntegerField(choices = IMPORTANCE)
     expire_date = models.DateField()
     text = models.TextField()
@@ -109,7 +109,7 @@ class MultipleChoicePoll(models.Model):
 
 
 class CheckBoxPoll(models.Model):
-    poll = models.OneToOneField(Poll, related_name = 'checkbox_poll', on_delete = models.CASCADE)
+    poll = models.OneToOneField(Poll, related_name = 'check_box_poll', on_delete = models.CASCADE)
 
 
 class ShortAnswerPoll(models.Model):
@@ -122,8 +122,8 @@ class Customer(models.Model):
                                                        related_name = 'customers')
     paragraph_poll_answers = models.ManyToManyField(ParagraphPoll, through = 'ParagraphPollAnswer',
                                                     related_name = 'customers')
-    checkbox_poll_answers = models.ManyToManyField(CheckBoxPoll, through = 'CheckBoxPollAnswer',
-                                                   related_name = 'customers')
+    check_box_poll_answers = models.ManyToManyField(CheckBoxPoll, through = 'CheckBoxPollAnswer',
+                                                    related_name = 'customers')
     short_answer_poll_answers = models.ManyToManyField(ShortAnswerPoll, through = 'ShortAnswerPollAnswer',
                                                        related_name = 'customers')
     multiple_choice_poll_answers = models.ManyToManyField(MultipleChoicePoll, through = 'MultipleChoiceAnswer',
@@ -135,13 +135,22 @@ class Customer(models.Model):
 
 class PollAnswer(models.Model):
     completed = models.BooleanField(default = False)
+    POLL_TYPE = (
+        ('LinearScalePoll', 'LinearScalePoll'),
+        ('CheckBoxPoll', 'CheckBoxPoll'),
+        ('MultipleChoicePoll', 'MultipleChoicePoll'),
+        ('ShortAnswerPoll', 'ShortAnswerPoll'),
+        ('ParagraphPoll', 'ParagraphPoll')
+    )
+    poll_type = models.CharField(max_length = 20, choices = POLL_TYPE)
 
 
 class ShortAnswerPollAnswer(models.Model):
-    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'short_answer_poll')
+    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE,
+                                       related_name = 'short_answer_poll_answer')
     answer_text = models.CharField(max_length = 100, null = True)
-    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'short_answer_poll_answer')
-    poll = models.ForeignKey(ShortAnswerPoll, on_delete = models.CASCADE, related_name = 'short_answer_poll_answer')
+    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'short_answer_poll_answers')
+    poll = models.ForeignKey(ShortAnswerPoll, on_delete = models.CASCADE, related_name = 'short_answer_poll_answers')
 
 
 class CheckBoxOption(models.Model):
@@ -151,24 +160,26 @@ class CheckBoxOption(models.Model):
 
 
 class CheckBoxPollAnswer(models.Model):
-    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'checkbox_poll')
-    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'checkbox_poll_answer')
-    checkbox_poll = models.ForeignKey(CheckBoxPoll, on_delete = models.CASCADE, related_name = 'checkbox_poll_answer')
+    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'check_box_poll_answer')
+    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'check_box_poll_answers')
+    check_box_poll = models.ForeignKey(CheckBoxPoll, on_delete = models.CASCADE,
+                                       related_name = 'check_box_poll_answers')
     options = models.ManyToManyField(CheckBoxOption, related_name = 'answers')
 
 
 class ParagraphPollAnswer(models.Model):
-    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'paragraph_poll')
+    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'paragraph_poll_answer')
     answer_text = models.TextField(null = True)
-    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'paragraph_poll_answer')
-    poll = models.ForeignKey(ParagraphPoll, on_delete = models.CASCADE, related_name = 'paragraph_poll_answer')
+    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'paragraph_poll_answers')
+    poll = models.ForeignKey(ParagraphPoll, on_delete = models.CASCADE, related_name = 'paragraph_poll_answers')
 
 
 class LinearScalePollAnswer(models.Model):
-    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'linear_scale_poll')
+    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE,
+                                       related_name = 'linear_scale_poll_answer')
     answer = models.IntegerField(null = True)
-    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answer')
-    poll = models.ForeignKey(LinearScalePoll, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answer')
+    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answers')
+    poll = models.ForeignKey(LinearScalePoll, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answers')
 
 
 class MultipleChoiceOption(models.Model):
@@ -178,8 +189,9 @@ class MultipleChoiceOption(models.Model):
 
 
 class MultipleChoiceAnswer(models.Model):
-    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'multiple_choice_poll')
-    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'multiple_choice_answer')
+    poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE,
+                                       related_name = 'multiple_choice_poll_answer')
+    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'multiple_choice_answers')
     multiple_choice = models.ForeignKey(MultipleChoicePoll, on_delete = models.CASCADE,
                                         related_name = 'multiple_choice_answers')
     option = models.ForeignKey(MultipleChoiceOption, on_delete = models.CASCADE,
@@ -204,7 +216,7 @@ class CandidateProduct(models.Model):
     product_id = models.CharField(max_length = 50, null = True)
     product_name = models.CharField(max_length = 50, null = True)
     product_barcode = models.ImageField(null = True)
-    shop = models.ForeignKey(Shop, on_delete = models.CASCADE, related_name = 'discount')
+    shop = models.ForeignKey(Shop, on_delete = models.CASCADE, related_name = 'discounts')
     expire_date = models.DateField()
     days = models.IntegerField(default = 5)
 
@@ -212,7 +224,7 @@ class CandidateProduct(models.Model):
 class Discount(models.Model):
     active = models.BooleanField(default = True)
     code = models.CharField(max_length = 5, unique = True)
-    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discount')
+    customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discounts')
     candidate_product = models.ForeignKey(CandidateProduct, on_delete = models.CASCADE, related_name = 'discounts')
     start_date = models.DateField(default = timezone.now)
 
