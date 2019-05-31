@@ -3,13 +3,14 @@ from django.core.files import File
 from django.db import transaction
 from django.db.models import Q
 from django.http import FileResponse
+from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Tick_server.models import Code4Digit, Code4DigitSalesman, CheckBoxPollAnswer, MultipleChoiceAnswer, PollAnswer, \
-    LinearScalePollAnswer, ShortAnswerPollAnswer
+    LinearScalePollAnswer, ShortAnswerPollAnswer, ParagraphPollAnswer
 from Tick_server.serializers import *
 
 
@@ -288,23 +289,14 @@ class LoginSalesman(APIView):
         @return: Response showing whether login is successful or not, if login is successful then sends all user
         information
         """
-        email_field = False
-        try:
-            email = request.data['email']
-            email_field = True
-        except KeyError:
-            username = request.data['username']
-
+        email = request.data['email']
         password = request.data['password']
-        if email_field:
-            salesman = Salesman.objects.filter(user__email = email)
-        else:
-            salesman = Salesman.objects.filter(user__username = username)
+        salesman = Salesman.objects.filter(user__email = email)
 
         if salesman.count() == 0:
             return Response({
                 'result': False,
-                'message': 'کاربری با این شماره یافت نشد.',
+                'message': 'کاربری با این ایمیل یافت نشد.',
             })
         if not salesman[0].check_password(password):
             return Response({
@@ -431,12 +423,15 @@ class InactiveDiscountListView(APIView):
 
 # noinspection PyMethodMayBeStatic
 class GetCity(APIView):
+    permission_classes = []
+
     def get(self, pk) -> Response:
         """
         Returns city corresponding requested I{id}.
         @param pk: id for requested city
         @return: Response showing whether city was found or not. If city was found, it will be returned respectively.
         """
+
         try:
             city = City.objects.get(id = pk)
             serializer = CitySerializer(city)
@@ -453,6 +448,8 @@ class GetCity(APIView):
 
 # noinspection PyMethodMayBeStatic,PyUnusedLocal
 class GetShopKind(APIView):
+    permission_classes = []
+
     def get(self, request, pk) -> Response:
         """
         Returns ShopKind corresponding requested I{id}.
@@ -461,6 +458,7 @@ class GetShopKind(APIView):
         @return: Response showing whether ShopKind was found or not. If ShopKind was found, it will be returned
         respectively.
         """
+
         try:
             shop_kind = ShopKind.objects.get(id = pk)
             serializer = ShopKindSerializer(shop_kind)
@@ -605,13 +603,6 @@ class getShops(APIView):
         username = request.data['username']
 
 
-class MyPoll(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
-
-
 class AddPoll(APIView):
     permission_classes = []
 
@@ -622,8 +613,9 @@ class AddPoll(APIView):
         @return:
         """
         request.data._mutable = True
-        type_poll = request.data.pop('type')
-        if type_poll[0] == 'CheckBoxPoll':
+        type_poll = request.data['type_poll']
+        print(type_poll)
+        if type_poll == 'CheckBoxPoll':
             answer_texts = request.data.pop('answer_texts')
             answer_texts = (answer_texts[0]).split(',')
             poll_serializer = PollSerializer(data = request.data)
@@ -669,7 +661,7 @@ class AddPoll(APIView):
                 'result': True,
                 'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
             })
-        elif type_poll[0] == 'MultipleChoicePoll':
+        elif type_poll == 'MultipleChoicePoll':
             answer_texts = request.data.pop('answer_texts')
             answer_texts = (answer_texts[0]).split(',')
             poll_serializer = PollSerializer(data = request.data)
@@ -716,7 +708,7 @@ class AddPoll(APIView):
                 'result': True,
                 'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
             })
-        elif type_poll[0] == 'ParagraphPoll':
+        elif type_poll == 'ParagraphPoll':
             poll_serializer = PollSerializer(data = request.data)
             if not poll_serializer.is_valid():
                 print(poll_serializer.errors)
@@ -741,7 +733,7 @@ class AddPoll(APIView):
                         'result': True,
                         'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
                     })
-        elif type_poll[0] == 'LinearScalePoll':
+        elif type_poll == 'LinearScalePoll':
             poll_serializer = PollSerializer(data = request.data)
             if not poll_serializer.is_valid():
                 print(poll_serializer.errors)
@@ -795,51 +787,45 @@ class SubmitPoll(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-        poll_answer = PollAnswer.objects.create(completed = False)
         customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
         poll = Poll.objects.get(id = request.data['poll_id'])
         if 'linear_scale_answer' in request.data:
             linear_poll = poll.linear_scale_poll
+            linear_scale_poll_ans = LinearScalePollAnswer.objects.get(poll = linear_poll)
             print(request.data['linear_scale_answer'])
-            LinearScalePollAnswer.objects.create(poll_answer = poll_answer, customer = customer, poll = linear_poll,
-                                                 answer = int(request.data['linear_scale_answer']))
-            poll_answer.completed = True
-            poll_answer.save()
-
+            linear_scale_poll_ans.answer = int(request.data['linear_scale_answer'])
+            linear_scale_poll_ans.poll_answer.completed = True
+            linear_scale_poll_ans.save()
         elif 'short_answer_text' in request.data:
             short_poll = poll.short_answer_poll
-            print(request.data['linear_scale_answer'])
-            ShortAnswerPollAnswer.objects.create(poll_answer = poll_answer, customer = customer, poll = short_poll,
-                                                 answer = request.data['short_answer_text'])
-            poll_answer.completed = True
-            poll_answer.save()
+            short_answer_poll_ans = ShortAnswerPollAnswer.objects.get(poll = short_poll)
+            short_answer_poll_ans.answer_text = request.data['short_answer_text']
+            short_answer_poll_ans.poll_answer.completed = True
+            short_answer_poll_ans.save()
 
         elif 'paragraph_text' in request.data:
             paragraph_poll = poll.paragraph_poll
-            ShortAnswerPollAnswer.objects.create(poll_answer = poll_answer, customer = customer, poll = paragraph_poll,
-                                                 answer = request.data['paragraph_text'])
-            poll_answer.completed = True
-            poll_answer.save()
+            paragraph_poll_ans = ParagraphPollAnswer.objects.get(poll = paragraph_poll)
+            paragraph_poll_ans.answer_text = request.data['paragraph_text']
+            paragraph_poll_ans.poll_answer.completed = True
+            paragraph_poll_ans.save()
         elif 'check_box_answer' in request.data:
             checkbox_poll = poll.checkbox_poll
+            checkbox_poll_ans = CheckBoxPollAnswer.objects.get(checkbox_poll = checkbox_poll)
             answers = request.data['check_box_answer'][1:-1].split(',')
             print(answers)
-            answer = CheckBoxPollAnswer.objects.create(poll_answer = poll_answer, customer = customer,
-                                                       checkbox_poll = checkbox_poll)
             for ans in answers:
-                answer.options.add(checkbox_poll.options.get(index = int(ans)))
-            answer.save()
-            poll_answer.completed = True
-            poll_answer.save()
+                checkbox_poll_ans.options.add(checkbox_poll.options.get(index = int(ans)))
+            checkbox_poll_ans.poll_answer.completed = True
+            checkbox_poll_ans.save()
         else:
             multiple_choice_poll = poll.multiple_choice_poll
+            multiple_choice_poll_ans = MultipleChoiceAnswer.objects.get(multiple_choice = multiple_choice_poll)
             index = int(request.data['multiple_choice_answer'])
-            answer = MultipleChoiceAnswer.objects.create(poll_answer = poll_answer, customer = customer,
-                                                         multiple_choice = multiple_choice_poll)
-            answer.option = multiple_choice_poll.options.get(index = index)
-            answer.save()
-            poll_answer.completed = True
-            poll_answer.save()
+            print(index)
+            multiple_choice_poll_ans.option = multiple_choice_poll.options.get(index = index)
+            multiple_choice_poll_ans.poll_answer.completed = True
+            multiple_choice_poll_ans.save()
 
         return Response({
             'result': True,
@@ -847,43 +833,129 @@ class SubmitPoll(APIView):
         })
 
 
+# noinspection DjangoOrm, PyMethodMayBeStatic
+class MyPolls(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
+        print('*****')
+        all_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answer__customer = customer,
+                                          paragraph_poll__paragraph_poll_answer__poll_answer__completed = False) |
+                                        Q(short_answer_poll__short_answer_poll_answer__customer = customer,
+                                          short_answer_poll__short_answer_poll_answer__poll_answer__completed = False) |
+                                        Q(linear_scale_poll__linear_scale_poll_answer__customer = customer,
+                                          linear_scale_poll__linear_scale_poll_answer__poll_answer__completed = True) |
+                                        Q(checkbox_poll__checkbox_poll_answer__customer = customer,
+                                          checkbox_poll__checkbox_poll_answer__poll_answer__completed = True) |
+                                        Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
+                                          multiple_choice_poll__multiple_choice_answers__poll_answer__completed = False))
+        print("&&&")
+        print(all_polls)
+        data = {'result': True,
+                'message': 'نظرسنجی های یک کاربر',
+                'polls': []
+                }
+        for poll in all_polls:
+            if poll.type_poll == "LinearScalePoll":
+                data['polls'].append({'text': poll.text})
+            elif poll.type_poll == 'ShortAnswerPoll':
+                data['polls'].append({'text': poll.text})
+            elif poll.type_poll == 'ParagraphPoll':
+                data['polls'].append({'text': poll.text})
+            elif poll.type_poll == 'MultipleChoicePoll':
+                choices = []
+                for option in poll.multiple_choice_poll.options.all():
+                    choices.append(option.answer_text)
+                data['polls'].append({'text': poll.text, 'choices': choices})
+
+            else:
+                choices = []
+                for option in poll.checkbox_poll.options.all():
+                    choices.append(option.answer_text)
+                data['polls'].append({'text': poll.text, 'choices': choices})
+        return Response(data = data)
+
+
 class PollToCustomer(APIView):
+    permission_classes = []
+
     def post(self, request):
         """
         TODO
         @param request:
         @return:
         """
-        shop = Shop.objects.get(id = request.data['shop_id'])
+        shop = Shop.objects.get(id = request.data['shop'])
         customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
-        poll_count = customer.linear_scale_poll_answers.filter(shop = shop).count()
-        poll_count += customer.short_answer_poll_answers.filter(shop = shop).count()
-        poll_count += customer.checkbox_poll_answers.filter(shop = shop).filter(shop = shop).count()
-        poll_count += customer.multiple_choice_poll_answers.filter(shop = shop).count()
-        poll_count += customer.paragraph_poll_answers.filter(shop = shop).count()
-        polls_of_customer = PollAnswer.objects.filter(Q(short_answer_poll__customer = customer) |
-                                                      Q(multiple_choice_poll__customer = customer) |
-                                                      Q(paragraph_poll__customer = customer) |
-                                                      Q(linear_scale_poll__customer = customer) |
-                                                      Q(checkbox_poll__customer = customer))
+        my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answer__customer = customer,
+                                         paragraph_poll__paragraph_poll_answer__poll_answer__completed = True) |
+                                       Q(short_answer_poll__short_answer_poll_answer__customer = customer,
+                                         short_answer_poll__short_answer_poll_answer__poll_answer__completed = True) |
+                                       Q(linear_scale_poll__linear_scale_poll_answer__customer = customer,
+                                         linear_scale_poll__linear_scale_poll_answer__poll_answer__completed = True) |
+                                       Q(checkbox_poll__checkbox_poll_answer__customer = customer,
+                                         checkbox_poll__checkbox_poll_answer__poll_answer__completed = True) |
+                                       Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
+                                         multiple_choice_poll__multiple_choice_answers__poll_answer__completed = True))
+        not_my_polls = Poll.objects.filter((~Q(paragraph_poll__paragraph_poll_answer__customer = customer) &
+                                            ~Q(short_answer_poll__short_answer_poll_answer__customer = customer) &
+                                            ~Q(linear_scale_poll__linear_scale_poll_answer__customer = customer) &
+                                            ~Q(checkbox_poll__checkbox_poll_answer__customer = customer) &
+                                            ~Q(multiple_choice_poll__multiple_choice_answers__customer = customer)),
+                                           shop = shop)
 
-        # if 50 <= poll_count:
-        # poll = Poll.objects.filter(importance = 10, exp_date__gte = timezone.now(), shop=shop)
-        # elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() == 0):
-        #     my_discounts = discounts.filter(percent__lte = 90, percent__gt = 80)
-        # elif 40 <= poll_count < 45 or (my_discounts and my_discounts.count() == 0):
-        #     my_discounts = discounts.filter(percent__lte = 80, percent__gt = 70)
-        # elif 35 <= poll_count < 40 or (my_discounts and my_discounts.count() == 0):
-        #     my_discounts = discounts.filter(percent__lte = 70, percent__gt = 60)
-        # elif 30 <= poll_count < 35 or (my_discounts and my_discounts.count() == 0):
-        #     my_discounts = discounts.filter(percent__lte = 60, percent__gt = 50)
-        # elif 25 <= poll_count < 30 or (my_discounts and my_discounts.count() == 0):
-        #     my_discounts = discounts.filter(percent__lte = 50, percent__gt = 40)
-        # elif 20 <= poll_count < 25 or (my_discounts and my_discounts.count() == 0):
-        #     my_discounts = discounts.filter(percent__lte = 40, percent__gt = 30)
-        # elif 15 <= poll_count < 20 or (my_discounts and my_discounts.count() == 0):
-        #     my_discounts = discounts.filter(percent__lte = 30, percent__gt = 20)
-        # elif 10 <= poll_count < 15 or (my_discounts and my_discounts.count() == 0):
-        #     my_discounts = discounts.filter(percent__lte = 20, percent__gt = 10)
-        # elif poll_count < 10 or (my_discounts and my_discounts.count() == 0):
-        #     my_discounts = discounts.filter(percent__lte = 10)
+        poll_count = my_polls.filter(shop = shop).count()
+        print(not_my_polls.all().count())
+        polls = []
+        if 50 <= poll_count:
+            polls = not_my_polls.filter(importance = 10, expire_date__gte = timezone.now())
+        elif 45 <= poll_count < 50 or (polls and polls.count() == 0):
+            polls = not_my_polls.filter(importance = 9, expire_date__gte = timezone.now())
+        elif 40 <= poll_count < 45 or (polls and polls.count() == 0):
+            polls = not_my_polls.filter(importance = 8, expire_date__gte = timezone.now())
+        elif 35 <= poll_count < 40 or (polls and polls.count() == 0):
+            polls = not_my_polls.filter(importance = 7, expire_date__gte = timezone.now())
+        elif 30 <= poll_count < 35 or (polls and polls.count() == 0):
+            polls = not_my_polls.filter(importance = 6, expire_date__gte = timezone.now())
+        elif 25 <= poll_count < 30 or (polls and polls.count() == 0):
+            polls = not_my_polls.filter(importance = 5, expire_date__gte = timezone.now())
+        elif 20 <= poll_count < 25 or (polls and polls.count() == 0):
+            polls = not_my_polls.filter(importance = 4, expire_date__gte = timezone.now())
+        elif 15 <= poll_count < 20 or (polls and polls.count() == 0):
+            polls = not_my_polls.filter(importance = 3, expire_date__gte = timezone.now())
+        elif 10 <= poll_count < 15 or (polls and polls.count() == 0):
+            polls = not_my_polls.filter(importance = 2, expire_date__gte = timezone.now())
+        elif poll_count < 10 or (polls and polls.count() == 0):
+            polls = not_my_polls.filter(importance = 1, expire_date__gte = timezone.now())
+
+        print(polls)
+        import random
+        index = random.randint(0, len(polls))
+        poll = polls[index]
+        print(type(polls[index]))
+        poll_answer = PollAnswer.objects.create(completed = False)
+        if poll.type_poll == 'LinearScalePoll':
+            print(poll.linear_scale_poll)
+            LinearScalePollAnswer.objects.create(poll = poll.linear_scale_poll, customer = customer,
+                                                 poll_answer = poll_answer)
+        elif poll.type_poll == 'CheckBoxPoll':
+            print(poll.checkbox_poll)
+            CheckBoxPollAnswer.objects.create(checkbox_poll = poll.checkbox_poll, customer = customer,
+                                              poll_answer = poll_answer)
+        elif poll.type_poll == 'MultipleChoicePoll':
+            print(poll.multiple_choice_poll)
+            MultipleChoiceAnswer.objects.create(multiple_choice = poll.multiple_choice_poll, customer = customer,
+                                                poll_answer = poll_answer)
+        elif poll.type_poll == 'ShortAnswerPoll':
+            print(poll.short_answer_poll)
+            ShortAnswerPollAnswer.objects.create(poll = poll.short_answer_poll, customer = customer,
+                                                 poll_answer = poll_answer)
+        elif poll.type_poll == 'ParagraphPoll':
+            print(poll.paragraph_poll)
+            ParagraphPollAnswer.objects.create(poll = poll.paragraph_poll, customer = customer,
+                                               poll_answer = poll_answer)
+        return Response({
+            'result': True,
+            'message': 'نظرسنجی به کاربر داده شد.',
+        })

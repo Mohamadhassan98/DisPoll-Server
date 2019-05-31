@@ -66,6 +66,13 @@ class Shop(models.Model):
 
 
 class Poll(models.Model):
+    TYPE_POLL = (
+        ('LinearScalePoll', 'LinearScalePoll'),
+        ('CheckBoxPoll', 'CheckBoxPoll'),
+        ('MultipleChoicePoll', 'MultipleChoicePoll'),
+        ('ShortAnswerPoll', 'ShortAnswerPoll'),
+        ('ParagraphPoll', 'ParagraphPoll')
+    )
     IMPORTANCE = (
         (1, 1),
         (2, 2),
@@ -78,6 +85,7 @@ class Poll(models.Model):
         (9, 9),
         (10, 10)
     )
+    type_poll = models.CharField(choices = TYPE_POLL, max_length = 20)
     importance = models.IntegerField(choices = IMPORTANCE)
     expire_date = models.DateField()
     text = models.TextField()
@@ -130,7 +138,7 @@ class PollAnswer(models.Model):
 
 class ShortAnswerPollAnswer(models.Model):
     poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'short_answer_poll')
-    answer_text = models.CharField(max_length = 100)
+    answer_text = models.CharField(max_length = 100, null = True)
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'short_answer_poll_answer')
     poll = models.ForeignKey(ShortAnswerPoll, on_delete = models.CASCADE, related_name = 'short_answer_poll_answer')
 
@@ -150,21 +158,21 @@ class CheckBoxPollAnswer(models.Model):
 
 class ParagraphPollAnswer(models.Model):
     poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'paragraph_poll')
-    answer_text = models.TextField()
+    answer_text = models.TextField(null = True)
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'paragraph_poll_answer')
     poll = models.ForeignKey(ParagraphPoll, on_delete = models.CASCADE, related_name = 'paragraph_poll_answer')
 
 
 class LinearScalePollAnswer(models.Model):
     poll_answer = models.OneToOneField(PollAnswer, on_delete = models.CASCADE, related_name = 'linear_scale_poll')
-    answer = models.IntegerField()
+    answer = models.IntegerField(null = True)
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answer')
     poll = models.ForeignKey(LinearScalePoll, on_delete = models.CASCADE, related_name = 'linear_scale_poll_answer')
 
 
 class MultipleChoiceOption(models.Model):
     index = models.IntegerField()
-    answer_text = models.CharField(max_length = 100)
+    answer_text = models.CharField(max_length = 100, null = True)
     poll = models.ForeignKey(MultipleChoicePoll, on_delete = models.CASCADE, related_name = 'options')
 
 
@@ -174,7 +182,7 @@ class MultipleChoiceAnswer(models.Model):
     multiple_choice = models.ForeignKey(MultipleChoicePoll, on_delete = models.CASCADE,
                                         related_name = 'multiple_choice_answers')
     option = models.ForeignKey(MultipleChoiceOption, on_delete = models.CASCADE,
-                               related_name = 'answers')
+                               related_name = 'answers', null = True)
 
 
 class Code4Digit(models.Model):

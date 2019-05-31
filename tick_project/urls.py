@@ -40,5 +40,7 @@ urlpatterns = [
     path('shop-kind/<int:pk>/', GetShopKind.as_view()),
     path('edit-profile-salesman/', EditSalesmanProfileView.as_view()),
     path('add-poll/', AddPoll.as_view()),
-    path('submit-poll/', SubmitPoll.as_view())
+    path('submit-poll/', SubmitPoll.as_view()),
+    path('my-polls/', MyPolls.as_view()),
+    path('poll-to-customer/', PollToCustomer.as_view()),
 ]
