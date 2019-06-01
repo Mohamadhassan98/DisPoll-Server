@@ -1,4 +1,5 @@
 import string
+from typing import Union
 
 from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
@@ -13,14 +14,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from Tick_server.models import Code4Digit, Code4DigitSalesman, CheckBoxPollAnswer, MultipleChoiceAnswer, PollAnswer, \
-    LinearScalePollAnswer, ShortAnswerPollAnswer, ParagraphPollAnswer
+from Tick_server.models import *
 from Tick_server.serializers import *
 
 
 # noinspection PyMethodMayBeStatic
 class SignUpFirstCustomer(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def post(self, request) -> Response:
         """
@@ -45,6 +46,7 @@ class SignUpFirstCustomer(APIView):
 # noinspection PyMethodMayBeStatic
 class SignUpSecondCustomer(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def post(self, request) -> Response:
         """
@@ -69,6 +71,7 @@ class SignUpSecondCustomer(APIView):
 # noinspection PyMethodMayBeStatic
 class ResendCodeCustomer(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def post(self, request) -> Response:
         """
@@ -87,6 +90,7 @@ class ResendCodeCustomer(APIView):
 # noinspection PyMethodMayBeStatic
 class SignUpFinalCustomer(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def post(self, request) -> Response:
         """
@@ -118,6 +122,7 @@ class SignUpFinalCustomer(APIView):
 # noinspection PyMethodMayBeStatic
 class LoginCustomer(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def post(self, request) -> Response:
         """
@@ -153,8 +158,14 @@ class LoginCustomer(APIView):
 # noinspection PyMethodMayBeStatic
 class EditCustomerProfile(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
-    def post(self, request):
+    def post(self, request) -> Response:
+        """
+        Authenticates the user, validates and changes the information he sends via I{request}.
+        @param request: Containing information wanted to edit.
+        @return: I{Response} showing whether information updated or not.
+        """
         customer = Customer.objects.filter(user__phone_number = request.data['phone_number'],
                                            user__username = request.user)
         _mutable = request.data._mutable
@@ -190,6 +201,7 @@ class EditCustomerProfile(APIView):
 # noinspection PyMethodMayBeStatic
 class SignUpFirstSalesman(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def post(self, request) -> Response:
         """
@@ -215,6 +227,7 @@ class SignUpFirstSalesman(APIView):
 # noinspection PyMethodMayBeStatic
 class SignUpSecondSalesman(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def post(self, request) -> Response:
         """
@@ -239,6 +252,7 @@ class SignUpSecondSalesman(APIView):
 # noinspection PyMethodMayBeStatic
 class SignUpFinalSalesman(APIView):
     permission_classes = []
+    authentication_classes = []
 
     @transaction.atomic
     def post(self, request) -> Response:
@@ -274,6 +288,7 @@ class SignUpFinalSalesman(APIView):
 # noinspection PyMethodMayBeStatic
 class ResendCodeSalesman(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def post(self, request) -> Response:
         """
@@ -292,6 +307,7 @@ class ResendCodeSalesman(APIView):
 # noinspection PyMethodMayBeStatic
 class LoginSalesman(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def post(self, request) -> Response:
         """
@@ -300,7 +316,6 @@ class LoginSalesman(APIView):
         @return: Response showing whether login is successful or not, if login is successful then sends all user
         information
         """
-        print(vars(request.session))
         email = request.data['email']
         password = request.data['password']
         salesman = Salesman.objects.filter(user__email = email)
@@ -326,7 +341,8 @@ class LoginSalesman(APIView):
 
 # noinspection PyMethodMayBeStatic
 class AddShop(APIView):
-    permission_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
 
     def post(self, request) -> Response:
         """
@@ -335,6 +351,12 @@ class AddShop(APIView):
         @return: Response showing whether adding a new shop was successful, if adding is successful, then sends shop
         id
         """
+        salesman = Salesman.objects.get(pk = request.data['salesman']).user
+        if salesman != request.user:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
         serializer = ShopSerializer(data = request.data)
         if not serializer.is_valid():
             print(serializer.errors)
@@ -354,7 +376,8 @@ class AddShop(APIView):
 
 # noinspection PyMethodMayBeStatic
 class AddDiscount(APIView):
-    permission_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
 
     def post(self, request) -> Response:
         """
@@ -362,6 +385,13 @@ class AddDiscount(APIView):
         @param request: containing discount information and count of discount to add
         @return: Response showing whether adding discount is successful or not
         """
+        shop = Shop.objects.get(pk = request.data['shop'])
+        shops = request.user.salesman.shops
+        if shops.filter(pk = shop.pk).count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
         copy = request.data.copy()
         days = int(copy.pop('days')[0])
         count = int(copy.pop('count')[0])
@@ -388,6 +418,7 @@ class AddDiscount(APIView):
 # noinspection PyMethodMayBeStatic
 class ActiveDiscountListView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
     def post(self, request) -> Response:
         """
@@ -418,6 +449,7 @@ class ActiveDiscountListView(APIView):
 # noinspection PyMethodMayBeStatic
 class InactiveDiscountListView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
     def post(self, request) -> Response:
         """
@@ -448,13 +480,13 @@ class InactiveDiscountListView(APIView):
 # noinspection PyMethodMayBeStatic, PyUnusedLocal
 class GetCities(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def get(self, request) -> Response:
         """
-        TODO
-        Returns city corresponding requested I{id}.
+        Returns all cities.
         @type request: Unused
-        @return: Response showing whether city was found or not. If city was found, it will be returned respectively.
+        @return: Response containing all cities in the database.
         """
         cities = City.objects.all()
         data = []
@@ -462,7 +494,7 @@ class GetCities(APIView):
             data.append({'id': city.pk, 'name': city.name})
         return Response({
             'result': True,
-            'message': 'نام شهرها',
+            'message': 'انواع فروشگاه',
             'cities': data
         })
 
@@ -470,6 +502,7 @@ class GetCities(APIView):
 # noinspection PyMethodMayBeStatic, PyUnusedLocal
 class GetShopKinds(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def get(self, request) -> Response:
         """
@@ -489,88 +522,18 @@ class GetShopKinds(APIView):
         })
 
 
-# class DiscountToCustomer(APIView):
-#     def post(self, request) -> Response:
-#         """
-#         TODO
-#         :param request:
-#         :return:
-#         """
-# shop = Shop.objects.get(id = request.data['shop'])
-# customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
-# my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answer__customer = customer,
-#                                  paragraph_poll__paragraph_poll_answer__poll_answer__completed = True) |
-#                                Q(short_answer_poll__short_answer_poll_answer__customer = customer,
-#                                  short_answer_poll__short_answer_poll_answer__poll_answer__completed = True) |
-#                                Q(linear_scale_poll__linear_scale_poll_answer__customer = customer,
-#                                  linear_scale_poll__linear_scale_poll_answer__poll_answer__completed = True) |
-#                                Q(check_box_poll__check_box_poll_answer__customer = customer,
-#                                  check_box_poll__check_box_poll_answer__poll_answer__completed = True) |
-#                                Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
-#                                  multiple_choice_poll__multiple_choice_answers__poll_answer__completed = True))
-#
-# poll_count = my_polls.filter(shop = shop).count()
-# discounts = CandidateProduct.objects.filter(shop = shop, count__gt = 0)
-# my_discounts = None
-# if 50 <= poll_count:
-#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 100,
-#                                     percent__gt = 90)
-# elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() == 0):
-#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 90,
-#                                     percent__gt = 80)
-# elif 40 <= poll_count < 45 or (my_discounts and my_discounts.count() == 0):
-#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 80,
-#                                     percent__gt = 70)
-# elif 35 <= poll_count < 40 or (my_discounts and my_discounts.count() == 0):
-#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 70,
-#                                     percent__gt = 60)
-# elif 30 <= poll_count < 35 or (my_discounts and my_discounts.count() == 0):
-#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 60,
-#                                     percent__gt = 50)
-# elif 25 <= poll_count < 30 or (my_discounts and my_discounts.count() == 0):
-#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 50,
-#                                     percent__gt = 40)
-# elif 20 <= poll_count < 25 or (my_discounts and my_discounts.count() == 0):
-#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 40,
-#                                     percent__gt = 30)
-# elif 15 <= poll_count < 20 or (my_discounts and my_discounts.count() == 0):
-#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 30,
-#                                     percent__gt = 20)
-# elif 10 <= poll_count < 15 or (my_discounts and my_discounts.count() == 0):
-#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 20,
-#                                     percent__gt = 10)
-# elif poll_count < 10 or (my_discounts and my_discounts.count() == 0):
-#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 10)
-# else:
-#     return Response({
-#         'result': False,
-#         'message': 'تخفیفی برای این فروشگاه یافت نشد.'
-#     })
-# import random
-# index = random.randint(0, len(my_discounts))
-# product = my_discounts[index]
-# code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
-# while Discount.objects.filter(code = code).count() != 0:
-#     code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
-# discount = Discount.objects.create(code = code, active = True, candidate_product = product, customer = customer)
-# product.count -= 1
-# product.save()
-# serializer = DiscountSerializer(discount)
-# return Response({
-#     'result': True,
-#     'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.',
-#     'discount': serializer.data
-# })
-
-
 # noinspection PyMethodMayBeStatic
 class EditSalesmanProfileView(APIView):
-    # permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (SessionAuthentication,)
 
     @transaction.atomic
-    def post(self, request):
-        print(request.session)
+    def post(self, request) -> Response:
+        """
+        Authenticates the user, validates and changes the information he sends via I{request}.
+        @param request: Containing information wanted to edit.
+        @return: I{Response} showing whether information updated or not.
+        """
         salesman = Salesman.objects.get(user__email = request.data['email'])
         if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
@@ -588,10 +551,10 @@ class EditSalesmanProfileView(APIView):
                     serializer = SalesmanSerializer(salesman, request.data, partial = True)
                     serializer.is_valid(raise_exception = True)
                     serializer.save()
-                    return Response({
-                        'result': True,
-                        'message': 'ویرایش اطلاعات با موفقیت انجام شد.'
-                    })
+                return Response({
+                    'result': True,
+                    'message': 'ویرایش اطلاعات با موفقیت انجام شد.'
+                })
         except serializers.ValidationError as e:
             print(e)
             return Response({
@@ -600,237 +563,269 @@ class EditSalesmanProfileView(APIView):
             })
 
 
-class test(APIView):
-    def get(self, request, path, Format = None):
-        fe = File(open('tmp/' + path, 'rb'))
-        return FileResponse(fe)
+# noinspection PyMethodMayBeStatic
+class GetSalesmanAvatar(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
+
+    def get(self, request) -> FileResponse:
+        """
+        Gets the I{avatar} of salesman.
+        @param request: containing authenticated user object.
+        @return: FileResponse containing salesman's I{avatar}
+        """
+        file = File(open('new-temp/' + str(request.user.salesman.avatar), 'rb'))
+        return FileResponse(file)
 
 
-class NotCompletedPollList(APIView):
-    def post(self, request, Format = None):
-        page = request.data['post']
-        offset = request.data['offset']
-        phone = request.data['phone_number']
-        customer = Customer.objects.get(phone_number = phone)
-        polls = []
-        polls.extend(customer.linear_scale_poll_answer.filter(completed = False))
-        polls.extend(customer.paragraph_poll_answers.filter(completed = False))
-        polls.extend(customer.short_answer_poll_answers.filter(completed = False))
-        polls.extend(customer.multiple_choice_poll_answers.filter(completed = False))
-        polls.extend(customer.check_box_poll_answers.filter(completed = False))
-        polls.sort(key = lambda poll: poll.remaining_time)
-        polls = polls[page - 1 * offset: page * offset]
-        serializer = PollSerializer(polls, many = True)
-        return Response({
-            'result': True,
-            'message': 'جستجو با موفقیت انجام شد.',
-            'polls': serializer.data
-        })
+# noinspection PyMethodMayBeStatic
+class GetShopPicture(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
+
+    def post(self, request) -> Union[Response, FileResponse]:
+        """
+        Gets the I{picture} of shop.
+        @param request: containing shop's I{pk}.
+        @return: FileResponse containing shop's I{picture} or Response if access is denied.
+        """
+        shop = Shop.objects.get(pk = request.data['shop'])
+        shops = request.user.salesman.shops
+        if shops.filter(pk = shop.pk).count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
+        file = File(open('new-temp/' + str(shop.picture)), 'rb')
+        return FileResponse(file)
 
 
-# not completed
-class CompletePoll(APIView):
-    def post(self, request, Format = None):
-        poll_id = request.data['poll_id']
-        username = request.data['username']
-        poll_type = request.data['poll_type']
+# noinspection PyMethodMayBeStatic
+class GetShopBusinessLicense(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
+
+    def post(self, request) -> Union[Response, FileResponse]:
+        """
+        Gets the I{business_license} of shop.
+        @param request: containing shop's I{pk}.
+        @return: FileResponse containing shop's I{business_license} or Response if access is denied.
+        """
+        shop = Shop.objects.get(pk = request.data['shop'])
+        shops = request.user.salesman.shops
+        if shops.filter(pk = shop.pk).count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
+        file = File(open('new-temp/' + str(shop.business_license)), 'rb')
+        return FileResponse(file)
 
 
-class getShops(APIView):
-    def post(self, request, Format = None):
-        username = request.data['username']
+# # TODO
+# class NotCompletedPollList(APIView):
+#     def post(self, request, Format = None):
+#         page = request.data['post']
+#         offset = request.data['offset']
+#         phone = request.data['phone_number']
+#         customer = Customer.objects.get(phone_number = phone)
+#         polls = []
+#         polls.extend(customer.linear_scale_poll_answer.filter(completed = False))
+#         polls.extend(customer.paragraph_poll_answers.filter(completed = False))
+#         polls.extend(customer.short_answer_poll_answers.filter(completed = False))
+#         polls.extend(customer.multiple_choice_poll_answers.filter(completed = False))
+#         polls.extend(customer.check_box_poll_answers.filter(completed = False))
+#         polls.sort(key = lambda poll: poll.remaining_time)
+#         polls = polls[page - 1 * offset: page * offset]
+#         serializer = PollSerializer(polls, many = True)
+#         return Response({
+#             'result': True,
+#             'message': 'جستجو با موفقیت انجام شد.',
+#             'polls': serializer.data
+#         })
 
 
+# noinspection PyMethodMayBeStatic
 class AddPoll(APIView):
-    permission_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
 
+    @transaction.atomic
     def post(self, request) -> Response:
         """
-        TODO
-        @param request:
-        @return:
+        Adds poll.
+        @param request: Containing data needed to add poll.
+        @return: Response showing whether adding was successful or not.
         """
+        shop = Shop.objects.get(pk = request.data['shop'])
+        shops = request.user.salesman.shops
+        if shops.filter(pk = shop.pk).count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
         request.data._mutable = True
         type_poll = request.data['type_poll']
-        print(type_poll)
         if type_poll == 'CheckBoxPoll':
-            answer_texts = request.data.pop('answer_texts')
-            answer_texts = (answer_texts[0]).split(',')
-            poll_serializer = PollSerializer(data = request.data)
-            if not poll_serializer.is_valid():
-                print(poll_serializer.errors)
-                return Response({
-                    'result': False,
-                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                })
-            poll = poll_serializer.save()
-            data = {
-                'poll': poll.pk
-            }
-            checkbox_serializer = CheckBoxPollSerializer(data = data)
-            if not checkbox_serializer.is_valid():
-                print(checkbox_serializer.errors)
-                return Response({
-                    'result': False,
-                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                })
-            checkbox_poll = checkbox_serializer.save()
-            index = 0
-            temp = []
-            for ans in answer_texts:
-                data = {
-                    'index': index,
-                    'answer_text': ans,
-                    'poll': checkbox_poll.pk
-                }
-                print(data)
-                option_serializer = CheckBoxPollOptionSerializer(data = data)
-                temp.append(option_serializer)
-                if not option_serializer.is_valid():
-                    print(option_serializer.errors)
-                    return Response({
-                        'result': False,
-                        'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                    })
-                index += 1
-            for ans in temp:
-                ans.save()
-            return Response({
-                'result': True,
-                'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
-            })
-        elif type_poll == 'MultipleChoicePoll':
-            answer_texts = request.data.pop('answer_texts')
-            answer_texts = (answer_texts[0]).split(',')
-            poll_serializer = PollSerializer(data = request.data)
-            if not poll_serializer.is_valid():
-                print(poll_serializer.errors)
-                return Response({
-                    'result': False,
-                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                })
-            poll = poll_serializer.save()
-            data = {
-                'poll': poll.pk
-            }
-            multiple_serializer = MultipleChoicePollSerializer(data = data)
-            if not multiple_serializer.is_valid():
-                print(multiple_serializer.errors)
-                return Response({
-                    'result': False,
-                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                })
-            multiple_poll = multiple_serializer.save()
-            temp = []
-            index = 0
-            for ans in answer_texts:
-                data = {
-                    'index': index,
-                    'answer_text': ans,
-                    'poll': multiple_poll.pk
-                }
-                print(data)
-                option_serializer = MultipleChoiceOptionSerializer(data = data)
-                temp.append(option_serializer)
-                if not option_serializer.is_valid():
-                    print("*****")
-                    print(option_serializer.errors)
-                    return Response({
-                        'result': False,
-                        'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                    })
-                index += 1
-            for ans in temp:
-                ans.save()
-            return Response({
-                'result': True,
-                'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
-            })
-        elif type_poll == 'ParagraphPoll':
-            poll_serializer = PollSerializer(data = request.data)
-            if not poll_serializer.is_valid():
-                print(poll_serializer.errors)
-                return Response({
-                    'result': False,
-                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                })
-            else:
-                poll = poll_serializer.save()
-                data = {
-                    'poll': poll.pk
-                }
-                paragraph_serializer = ParagraphPollSerializer(data = data)
-                if not paragraph_serializer.is_valid():
-                    print(paragraph_serializer.errors)
-                    return Response({
-                        'result': False,
-                        'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                    })
-                else:
+            try:
+                with transaction.atomic():
+                    answer_texts = request.data.pop('answer_texts')
+                    answer_texts = (answer_texts[0]).split(',')
+                    poll_serializer = PollSerializer(data = request.data)
+                    poll_serializer.is_valid(raise_exception = True)
+                    poll = poll_serializer.save()
+                    data = {
+                        'poll': poll.pk
+                    }
+                    checkbox_serializer = CheckBoxPollSerializer(data = data)
+                    checkbox_serializer.is_valid(raise_exception = True)
+                    checkbox_poll = checkbox_serializer.save()
+                    index = 0
+                    temp = []
+                    for ans in answer_texts:
+                        data = {
+                            'index': index,
+                            'answer_text': ans,
+                            'poll': checkbox_poll.pk
+                        }
+                        option_serializer = CheckBoxPollOptionSerializer(data = data)
+                        temp.append(option_serializer)
+                        option_serializer.is_valid(raise_exception = True)
+                        index += 1
+                    for ans in temp:
+                        ans.save()
                     return Response({
                         'result': True,
                         'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
                     })
-        elif type_poll == 'LinearScalePoll':
-            poll_serializer = PollSerializer(data = request.data)
-            if not poll_serializer.is_valid():
-                print(poll_serializer.errors)
+            except serializers.ValidationError as e:
+                print(e)
                 return Response({
                     'result': False,
                     'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
                 })
-            else:
-                poll = poll_serializer.save()
-                request.data._mutable = True
-                request.data.update({'poll': poll.pk})
-                linear_serializer = LinearScalePollSerializer(data = request.data)
-                if not linear_serializer.is_valid():
-                    print(linear_serializer.errors)
+        elif type_poll == 'MultipleChoicePoll':
+            try:
+                with transaction.atomic():
+                    answer_texts = request.data.pop('answer_texts')
+                    answer_texts = (answer_texts[0]).split(',')
+                    poll_serializer = PollSerializer(data = request.data)
+                    poll_serializer.is_valid(raise_exception = True)
+                    poll = poll_serializer.save()
+                    data = {
+                        'poll': poll.pk
+                    }
+                    multiple_serializer = MultipleChoicePollSerializer(data = data)
+                    multiple_serializer.is_valid(raise_exception = True)
+                    multiple_poll = multiple_serializer.save()
+                    temp = []
+                    index = 0
+                    for ans in answer_texts:
+                        data = {
+                            'index': index,
+                            'answer_text': ans,
+                            'poll': multiple_poll.pk
+                        }
+                        option_serializer = MultipleChoiceOptionSerializer(data = data)
+                        temp.append(option_serializer)
+                        option_serializer.is_valid(raise_exception = True)
+                        index += 1
+                    for ans in temp:
+                        ans.save()
                     return Response({
-                        'result': False,
-                        'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                        'result': True,
+                        'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
                     })
-                else:
+            except serializers.ValidationError as e:
+                print(e)
+                return Response({
+                    'result': False,
+                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                })
+        elif type_poll == 'ParagraphPoll':
+            try:
+                with transaction.atomic():
+                    poll_serializer = PollSerializer(data = request.data)
+                    poll_serializer.is_valid(raise_exception = True)
+                    poll = poll_serializer.save()
+                    data = {
+                        'poll': poll.pk
+                    }
+                    paragraph_serializer = ParagraphPollSerializer(data = data)
+                    paragraph_serializer.is_valid(raise_exception = True)
+                    return Response({
+                        'result': True,
+                        'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
+                    })
+            except serializers.ValidationError as e:
+                print(e)
+                return Response({
+                    'result': False,
+                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                })
+        elif type_poll == 'LinearScalePoll':
+            try:
+                with transaction.atomic():
+                    poll_serializer = PollSerializer(data = request.data)
+                    poll_serializer.is_valid(raise_exception = True)
+                    poll = poll_serializer.save()
+                    request.data._mutable = True
+                    request.data.update({'poll': poll.pk})
+                    linear_serializer = LinearScalePollSerializer(data = request.data)
+                    linear_serializer.is_valid(raise_exception = True)
                     linear_serializer.save()
                     return Response({
                         'result': True,
                         'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
                     })
-        else:
-            poll_serializer = PollSerializer(data = request.data)
-            if not poll_serializer.is_valid():
-                print(poll_serializer.errors)
+            except serializers.ValidationError as e:
+                print(e)
                 return Response({
                     'result': False,
                     'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
                 })
-            else:
-                poll = poll_serializer.save()
-                short_answer_serializer = ShortAnswerSerializer(data = request.data)
-                if not short_answer_serializer.is_valid():
-                    print(short_answer_serializer.errors)
-                    return Response({
-                        'result': False,
-                        'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
-                    })
-                else:
+        else:
+            try:
+                with transaction.atomic():
+                    poll_serializer = PollSerializer(data = request.data)
+                    poll_serializer.is_valid(raise_exception = True)
+                    poll_serializer.save()
+                    short_answer_serializer = ShortAnswerSerializer(data = request.data)
+                    short_answer_serializer.is_valid(raise_exception = True)
                     return Response({
                         'result': True,
                         'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
                     })
+            except serializers.ValidationError as e:
+                print(e)
+                return Response({
+                    'result': False,
+                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                })
 
 
 # noinspection DjangoOrm, PyMethodMayBeStatic
 class SubmitPoll(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
-    def post(self, request):
-        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
+    def post(self, request) -> Response:
+        """
+        Submits a poll and gives a discount to customer.
+        @param request: Containing I{poll_id} and the answer to poll.
+        @return: Response having discount, if any exists.
+        """
+        customer = Customer.objects.filter(user__phone_number = request.data['phone_number'], user = request.user)
+        if customer.count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
+        customer = customer[0]
         poll = Poll.objects.get(id = request.data['poll_id'])
         if 'linear_scale_answer' in request.data:
             linear_poll = poll.linear_scale_poll
             linear_scale_poll_ans = LinearScalePollAnswer.objects.get(poll = linear_poll)
-            print(request.data['linear_scale_answer'])
             linear_scale_poll_ans.answer = int(request.data['linear_scale_answer'])
             linear_scale_poll_ans.poll_answer.completed = True
             linear_scale_poll_ans.save()
@@ -840,7 +835,6 @@ class SubmitPoll(APIView):
             short_answer_poll_ans.answer_text = request.data['short_answer_text']
             short_answer_poll_ans.poll_answer.completed = True
             short_answer_poll_ans.save()
-
         elif 'paragraph_text' in request.data:
             paragraph_poll = poll.paragraph_poll
             paragraph_poll_ans = ParagraphPollAnswer.objects.get(poll = paragraph_poll)
@@ -851,7 +845,6 @@ class SubmitPoll(APIView):
             check_box_poll = poll.check_box_poll
             check_box_poll_ans = CheckBoxPollAnswer.objects.get(check_box_poll = check_box_poll)
             answers = request.data['check_box_answer'][1:-1].split(',')
-            print(answers)
             for ans in answers:
                 check_box_poll_ans.options.add(check_box_poll.options.get(index = int(ans)))
             check_box_poll_ans.poll_answer.completed = True
@@ -860,12 +853,10 @@ class SubmitPoll(APIView):
             multiple_choice_poll = poll.multiple_choice_poll
             multiple_choice_poll_ans = MultipleChoiceAnswer.objects.get(multiple_choice = multiple_choice_poll)
             index = int(request.data['multiple_choice_answer'])
-            print(index)
             multiple_choice_poll_ans.option = multiple_choice_poll.options.get(index = index)
             multiple_choice_poll_ans.poll_answer.completed = True
             multiple_choice_poll_ans.save()
-
-        shop = Shop.objects.get(id = request.data['shop'])
+        shop = Shop.objects.get(id = poll.shop.id)
         my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answers__customer = customer,
                                          paragraph_poll__paragraph_poll_answers__poll_answer__completed = True) |
                                        Q(short_answer_poll__short_answer_poll_answers__customer = customer,
@@ -876,7 +867,6 @@ class SubmitPoll(APIView):
                                          check_box_poll__check_box_poll_answers__poll_answer__completed = True) |
                                        Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
                                          multiple_choice_poll__multiple_choice_answers__poll_answer__completed = True))
-
         poll_count = my_polls.filter(shop = shop).count()
         discounts = CandidateProduct.objects.filter(expire_date__gte = timezone.now(), shop = shop, count__gt = 0)
         my_discounts = None
@@ -905,8 +895,6 @@ class SubmitPoll(APIView):
                 'result': False,
                 'message': 'تخفیفی برای این فروشگاه یافت نشد.'
             })
-        print("discounts:")
-        print(my_discounts)
         import random
         index = random.randint(0, len(my_discounts) - 1)
         product = my_discounts[index]
@@ -914,11 +902,8 @@ class SubmitPoll(APIView):
         while Discount.objects.filter(code = code).count() != 0:
             code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
         discount = Discount.objects.create(code = code, active = True, candidate_product = product, customer = customer)
-        print(product.count)
         product.count -= 1
-        print(product.count)
         product.save()
-        print(product.count)
         serializer = DiscountSerializer(discount)
         return Response({
             'result': True,
@@ -930,10 +915,21 @@ class SubmitPoll(APIView):
 # noinspection DjangoOrm, PyMethodMayBeStatic
 class MyPolls(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
-    def post(self, request):
-        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
-        print('*****')
+    def post(self, request) -> Response:
+        """
+        Gives the incomplete polls to customer.
+        @param request: Containing I{phone_number} of customer.
+        @return: Response having all incomplete polls of customer.
+        """
+        customer = Customer.objects.filter(user__phone_number = request.data['phone_number'], user = request.user)
+        if customer.count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
+        customer = customer[0]
         all_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answers__customer = customer,
                                           paragraph_poll__paragraph_poll_answers__poll_answer__completed = False) |
                                         Q(short_answer_poll__short_answer_poll_answers__customer = customer,
@@ -944,8 +940,6 @@ class MyPolls(APIView):
                                           check_box_poll__check_box_poll_answers__poll_answer__completed = False) |
                                         Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
                                           multiple_choice_poll__multiple_choice_answers__poll_answer__completed = False))
-        print("&&&")
-        print(all_polls)
         data = {
             'result': True,
             'message': 'نظرسنجی های یک کاربر',
@@ -973,28 +967,33 @@ class MyPolls(APIView):
                 for option in poll.multiple_choice_poll.options.all():
                     choices.append(option.answer_text)
                 data_poll.update({'choices': choices})
-
             else:
                 choices = []
                 for option in poll.check_box_poll.options.all():
                     choices.append(option.answer_text)
                 data_poll.update({'choices': choices})
-
             data['polls'].append(data_poll)
-
         return Response(data = data)
 
 
+# noinspection PyMethodMayBeStatic
 class PollToCustomer(APIView):
-    permission_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
 
-    def post(self, request):
+    def post(self, request) -> Response:
         """
-        TODO
-        @param request:
-        @return:
+        Assigns a poll to customer.
+        @param request: Containing shop and customer's phone number.
+        @return: A Response having random poll assigned to customer, if any exists.
         """
-        shop = Shop.objects.get(id = request.data['shop'])
+        shop = Shop.objects.get(pk = request.data['shop'])
+        shops = request.user.salesman.shops
+        if shops.filter(pk = shop.pk).count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
         customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
         my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answers__customer = customer,
                                          paragraph_poll__paragraph_poll_answers__poll_answer__completed = True) |
@@ -1016,7 +1015,6 @@ class PollToCustomer(APIView):
                                            shop = shop)
         print("not my polls:")
         print(not_my_polls)
-
         poll_count = my_polls.filter(shop = shop).count()
         print(not_my_polls.all().count())
         polls = None
@@ -1045,7 +1043,6 @@ class PollToCustomer(APIView):
                 'result': False,
                 'message': 'نظرسنجی ای یافت نشد.'
             })
-
         print("possible polls:")
         print(polls)
         import random
@@ -1085,10 +1082,22 @@ class PollToCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditShop(APIView):
-    permission_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
 
     def post(self, request) -> Response:
-        shop = Shop.objects.get(pk = request.data['id'])
+        """
+        Edits a shop.
+        @param request: Containing information wanted to edit.
+        @return: Response showing whether editing was successful or not.
+        """
+        shop = Shop.objects.get(pk = request.data['shop'])
+        shops = request.user.salesman.shops
+        if shops.filter(pk = shop.pk).count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
         serializer = ShopSerializer(shop, data = request.data, partial = True)
         if serializer.is_valid():
             serializer.save()
@@ -1107,8 +1116,14 @@ class EditShop(APIView):
 # noinspection PyUnusedLocal, PyMethodMayBeStatic
 class GetShops(APIView):
     permission_classes = []
+    authentication_classes = []
 
     def get(self, request) -> Response:
+        """
+        Gets all shops.
+        @param request: Unused.
+        @return: Response having all shops.
+        """
         shops = Shop.objects.all()
         data = []
         for shop in shops:
@@ -1116,13 +1131,56 @@ class GetShops(APIView):
             data.append(serializer.data)
         return Response({
             'result': True,
-            'message': 'نام شهرها',
+            'message': 'فروشگاه ها',
             'shops': data
         })
-# -------------------------------------------------------------------------------------------------------------------- #
-class LogoutViewEx(LogoutView):
-    authentication_classes = (TokenAuthentication,)
 
-    # def post(self, request, *args, **kwargs):
-    #     super().post(request, *args, **kwargs)
-    #     return Response({'result': True, 'message': 'Successfully signed out.'})
+
+# noinspection PyMethodMayBeStatic
+class LogoutViewCustomer(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        """
+        Logs a customer out.
+        @param request: Customer to be logged out.
+        @return: Always True.
+        """
+        token = Token.objects.get(user = request.user)
+        token.delete()
+        return Response({
+            'result': True,
+            'message': 'با موفقیت خارج شد.'
+        })
+
+
+class LogoutViewSalesman(LogoutView):
+    authentication_classes = (SessionAuthentication,)
+
+
+# noinspection PyMethodMayBeStatic
+class GetShopById(APIView):
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request) -> Response:
+        """
+        Gives shop information.
+        @param request: Requested shop id.
+        @return: Response having shop information.
+        """
+        shop = Shop.objects.get(pk = request.data['shop'])
+        shops = request.user.salesman.shops
+        if shops.filter(pk = shop.pk).count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
+        shop_kind = ShopKind.objects.get(pk = shop.shop_kind_id)
+        serializer = ShopKindSerializer(shop)
+        serializer.data.update({'shop_kind': shop_kind.name})
+        return Response({
+            'result': True,
+            'message': serializer.data
+        })

@@ -34,7 +34,7 @@ def upload_salesman_to_path(instance, filename):
 
 class Salesman(models.Model):
     user = models.OneToOneField(CustomUser, on_delete = models.CASCADE, related_name = 'salesman')
-    avatar = models.ImageField(null = True, upload_to = upload_salesman_to_path,
+    avatar = models.ImageField(upload_to = upload_salesman_to_path,
                                default = 'Salesman/antihippopotomonstrosesquippedaliophobiaantihippopotomonstrosesquippedaliophobiaantihippopotomonstrosesquippedaliophobiaantihippopotomonstrosesquippedaliophobia.jpg')
 
     def check_password(self, raw_password):

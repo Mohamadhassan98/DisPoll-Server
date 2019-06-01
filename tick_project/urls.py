@@ -26,11 +26,13 @@ urlpatterns = [
     path('signup-customer/complete-info/', SignUpFinalCustomer.as_view()),
     path('login-customer/', LoginCustomer.as_view()),
     path('edit-profile-customer/', EditCustomerProfile.as_view()),
+    path('customer-logout/', LogoutViewCustomer.as_view()),
     path('signup-salesman/email-auth/', SignUpFirstSalesman.as_view()),
     path('signup-salesman/confirm-email/', SignUpSecondSalesman.as_view()),
     path('signup-salesman/resend-code/', ResendCodeSalesman.as_view()),
     path('signup-salesman/complete-info/', SignUpFinalSalesman.as_view()),
     path('login-salesman/', LoginSalesman.as_view()),
+    path('salesman-logout/', LogoutViewSalesman.as_view()),
     path('discounts/active/', ActiveDiscountListView.as_view()),
     path('discounts/inactive/', InactiveDiscountListView.as_view()),
     path('add-shop/', AddShop.as_view()),
@@ -43,7 +45,6 @@ urlpatterns = [
     path('submit-poll/', SubmitPoll.as_view()),
     path('my-polls/', MyPolls.as_view()),
     path('poll-to-customer/', PollToCustomer.as_view()),
-    path('customer-log-out/', LogoutViewEx.as_view()),
     path('edit-shop/', EditShop.as_view()),
     path('shops/', GetShops.as_view())
 ]
