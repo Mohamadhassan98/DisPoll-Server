@@ -1,3 +1,7 @@
+from django.conf.urls.static import static
+
+from tick_project import settings
+
 urls_ = """tick_project URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -48,3 +52,4 @@ urlpatterns = [
     path('edit-shop/', EditShop.as_view()),
     path('shops/', GetShops.as_view())
 ]
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
