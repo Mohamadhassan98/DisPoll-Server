@@ -20,8 +20,8 @@ class UserSerializer(serializers.ModelSerializer):
         validated_data.pop('groups')
         validated_data.pop('user_permissions')
         validated_data.update({'is_active': True})
-        CustomUser.objects.create_user(username=username, password=password, **validated_data)
-        return CustomUser.objects.get(username=username)
+        CustomUser.objects.create_user(username = username, password = password, **validated_data)
+        return CustomUser.objects.get(username = username)
 
     def update(self, instance: CustomUser, validated_data):
         print('validated data:')
@@ -56,10 +56,9 @@ class SalesmanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salesman
         fields = '__all__'
-        depth = 1
 
     def update(self, instance, validated_data):
-        if os.path.isfile('new-temp/Salesman/' + instance.user.username + '.jpg'):
+        if os.path.isfile('new-temp/Salesman/' + instance.user.username + '.jpg') and 'avatar' in validated_data:
             os.remove('new-temp/Salesman/' + instance.user.username + '.jpg')
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.save()
@@ -90,14 +89,15 @@ class ShopSerializer(serializers.ModelSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.phone_number = validated_data.get('phone_number', instance.phone_number)
         instance.shop_kind = validated_data.get('shop_kind', instance.shop_kind)
-        if os.path.isfile('new-temp/Shop/shop_' + instance.pk + '.jpg'):
-            os.remove('new-temp/Shop/shop_' + instance.pk + '.jpg')
-        instance.picture = validated_data.get('picture', instance.picture)
-        if os.path.isfile('new-temp/Business-License/license_' + instance.pk + '.jpg'):
-            os.remove('new-temp/Business-License/license_' + instance.pk + '.jpg')
+        if os.path.isfile('new-temp/' + str(instance.business_license)) and 'business_license' in validated_data:
+            os.remove('new-temp/' + str(instance.business_license))
         instance.business_license = validated_data.get('business_license', instance.business_license)
+        if os.path.isfile('new-temp/' + str(instance.picture)) and 'picture' in validated_data:
+            os.remove('new-temp/' + str(instance.picture))
+        instance.picture = validated_data.get('picture', instance.picture)
         instance.save()
         return instance
+
 
 class CandidateProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -157,4 +157,3 @@ class ShortAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShortAnswerPoll
         fields = '__all__'
-

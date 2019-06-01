@@ -43,5 +43,7 @@ urlpatterns = [
     path('submit-poll/', SubmitPoll.as_view()),
     path('my-polls/', MyPolls.as_view()),
     path('poll-to-customer/', PollToCustomer.as_view()),
-    path('customer-log-out/', LogoutViewEx.as_view())
+    path('customer-log-out/', LogoutViewEx.as_view()),
+    path('edit-shop/', EditShop.as_view()),
+    path('shops/', GetShops.as_view())
 ]

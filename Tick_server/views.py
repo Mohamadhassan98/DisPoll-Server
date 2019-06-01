@@ -1083,6 +1083,42 @@ class PollToCustomer(APIView):
         })
 
 
+# noinspection PyMethodMayBeStatic
+class EditShop(APIView):
+    permission_classes = []
+
+    def post(self, request) -> Response:
+        shop = Shop.objects.get(pk = request.data['id'])
+        serializer = ShopSerializer(shop, data = request.data, partial = True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'result': True,
+                'message': 'ویرایش فروشگاه با موفقیت انجام شد.'
+            })
+        else:
+            print(serializer.errors)
+            return Response({
+                'result': False,
+                'message': 'ویرایش فروشگاه با خطا مواجه شد.'
+            })
+
+
+# noinspection PyUnusedLocal, PyMethodMayBeStatic
+class GetShops(APIView):
+    permission_classes = []
+
+    def get(self, request) -> Response:
+        shops = Shop.objects.all()
+        data = []
+        for shop in shops:
+            serializer = ShopSerializer(shop)
+            data.append(serializer.data)
+        return Response({
+            'result': True,
+            'message': 'نام شهرها',
+            'shops': data
+        })
 # -------------------------------------------------------------------------------------------------------------------- #
 class LogoutViewEx(LogoutView):
     authentication_classes = (TokenAuthentication,)
