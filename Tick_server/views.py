@@ -1,11 +1,13 @@
 import string
 
 from django.contrib.auth import login
+from django.contrib.auth.views import LogoutView
 from django.core.files import File
 from django.db import transaction
 from django.db.models import Q
 from django.http import FileResponse
 from django.utils import timezone
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -153,9 +155,16 @@ class EditCustomerProfile(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
+        customer = Customer.objects.filter(user__phone_number = request.data['phone_number'],
+                                           user__username = request.user)
         _mutable = request.data._mutable
         request.data._mutable = True
+        if customer.count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
+        customer = customer[0]
         if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
             if not customer.check_password(old_password[0]):
@@ -291,6 +300,7 @@ class LoginSalesman(APIView):
         @return: Response showing whether login is successful or not, if login is successful then sends all user
         information
         """
+        print(vars(request.session))
         email = request.data['email']
         password = request.data['password']
         salesman = Salesman.objects.filter(user__email = email)
@@ -388,7 +398,13 @@ class ActiveDiscountListView(APIView):
         page = int(request.data['page'])
         offset = int(request.data['offset'])
         phone = request.data['phone_number']
-        user = CustomUser.objects.get(phone_number = phone)
+        user = CustomUser.objects.filter(phone_number = phone, username = request.user)
+        if user.count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
+        user = user[0]
         discounts = Discount.objects.filter(active = True, customer = Customer.objects.get(user = user))[
                     page * offset: page * offset + offset]
         serializer = DiscountSerializer(discounts, many = True)
@@ -412,7 +428,13 @@ class InactiveDiscountListView(APIView):
         page = int(request.data['page'])
         offset = int(request.data['offset'])
         phone = request.data['phone_number']
-        user = CustomUser.objects.get(phone_number = phone)
+        user = CustomUser.objects.filter(phone_number = phone, username = request.user)
+        if user.count() == 0:
+            return Response({
+                'result': False,
+                'message': 'دسترسی رد شد.'
+            })
+        user = user[0]
         discounts = Discount.objects.filter(active = False, customer = Customer.objects.get(user = user))[
                     page * offset: page * offset + offset]
         serializer = DiscountSerializer(discounts, many = True)
@@ -423,7 +445,7 @@ class InactiveDiscountListView(APIView):
         })
 
 
-# noinspection PyMethodMayBeStatic
+# noinspection PyMethodMayBeStatic, PyUnusedLocal
 class GetCities(APIView):
     permission_classes = []
 
@@ -431,7 +453,7 @@ class GetCities(APIView):
         """
         TODO
         Returns city corresponding requested I{id}.
-        @param pk: id for requested city
+        @type request: Unused
         @return: Response showing whether city was found or not. If city was found, it will be returned respectively.
         """
         cities = City.objects.all()
@@ -445,7 +467,7 @@ class GetCities(APIView):
         })
 
 
-# noinspection PyMethodMayBeStatic,PyUnusedLocal
+# noinspection PyMethodMayBeStatic, PyUnusedLocal
 class GetShopKinds(APIView):
     permission_classes = []
 
@@ -453,7 +475,6 @@ class GetShopKinds(APIView):
         """
         Returns ShopKind corresponding requested I{id}.
         @param request: Unused
-        @param pk: id for requested ShopKind
         @return: Response showing whether ShopKind was found or not. If ShopKind was found, it will be returned
         respectively.
         """
@@ -544,10 +565,12 @@ class DiscountToCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditSalesmanProfileView(APIView):
-    permission_classes = []
+    # permission_classes = (IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
 
     @transaction.atomic
     def post(self, request):
+        print(request.session)
         salesman = Salesman.objects.get(user__email = request.data['email'])
         if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
@@ -993,3 +1016,12 @@ class PollToCustomer(APIView):
             'result': True,
             'message': 'نظرسنجی به کاربر داده شد.',
         })
+
+
+# -------------------------------------------------------------------------------------------------------------------- #
+class LogoutViewEx(LogoutView):
+    authentication_classes = (TokenAuthentication,)
+
+    # def post(self, request, *args, **kwargs):
+    #     super().post(request, *args, **kwargs)
+    #     return Response({'result': True, 'message': 'Successfully signed out.'})

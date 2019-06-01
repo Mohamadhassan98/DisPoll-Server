@@ -118,16 +118,14 @@ class ShortAnswerPoll(models.Model):
 
 class Customer(models.Model):
     user = models.OneToOneField(CustomUser, related_name = 'customer', on_delete = models.CASCADE)
-    linear_scale_poll_answers = models.ManyToManyField(LinearScalePoll, through = 'LinearScalePollAnswer',
-                                                       related_name = 'customers')
-    paragraph_poll_answers = models.ManyToManyField(ParagraphPoll, through = 'ParagraphPollAnswer',
-                                                    related_name = 'customers')
-    check_box_poll_answers = models.ManyToManyField(CheckBoxPoll, through = 'CheckBoxPollAnswer',
-                                                    related_name = 'customers')
-    short_answer_poll_answers = models.ManyToManyField(ShortAnswerPoll, through = 'ShortAnswerPollAnswer',
-                                                       related_name = 'customers')
-    multiple_choice_poll_answers = models.ManyToManyField(MultipleChoicePoll, through = 'MultipleChoiceAnswer',
-                                                          related_name = 'customers')
+    linear_scale_polls = models.ManyToManyField(LinearScalePoll, through = 'LinearScalePollAnswer',
+                                                related_name = 'customers')
+    paragraph_polls = models.ManyToManyField(ParagraphPoll, through = 'ParagraphPollAnswer', related_name = 'customers')
+    check_box_polls = models.ManyToManyField(CheckBoxPoll, through = 'CheckBoxPollAnswer', related_name = 'customers')
+    short_answer_polls = models.ManyToManyField(ShortAnswerPoll, through = 'ShortAnswerPollAnswer',
+                                                related_name = 'customers')
+    multiple_choice_polls = models.ManyToManyField(MultipleChoicePoll, through = 'MultipleChoiceAnswer',
+                                                   related_name = 'customers')
 
     def check_password(self, raw_password):
         return self.user.check_password(raw_password)
