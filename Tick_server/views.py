@@ -489,78 +489,78 @@ class GetShopKinds(APIView):
         })
 
 
-class DiscountToCustomer(APIView):
-    def post(self, request) -> Response:
-        """
-        TODO
-        :param request:
-        :return:
-        """
-        shop = Shop.objects.get(id = request.data['shop'])
-        customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
-        my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answer__customer = customer,
-                                         paragraph_poll__paragraph_poll_answer__poll_answer__completed = True) |
-                                       Q(short_answer_poll__short_answer_poll_answer__customer = customer,
-                                         short_answer_poll__short_answer_poll_answer__poll_answer__completed = True) |
-                                       Q(linear_scale_poll__linear_scale_poll_answer__customer = customer,
-                                         linear_scale_poll__linear_scale_poll_answer__poll_answer__completed = True) |
-                                       Q(checkbox_poll__checkbox_poll_answer__customer = customer,
-                                         checkbox_poll__checkbox_poll_answer__poll_answer__completed = True) |
-                                       Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
-                                         multiple_choice_poll__multiple_choice_answers__poll_answer__completed = True))
-
-        poll_count = my_polls.filter(shop = shop).count()
-        discounts = CandidateProduct.objects.filter(shop = shop, count__gt = 0)
-        my_discounts = None
-        if 50 <= poll_count:
-            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 100,
-                                            percent__gt = 90)
-        elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 90,
-                                            percent__gt = 80)
-        elif 40 <= poll_count < 45 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 80,
-                                            percent__gt = 70)
-        elif 35 <= poll_count < 40 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 70,
-                                            percent__gt = 60)
-        elif 30 <= poll_count < 35 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 60,
-                                            percent__gt = 50)
-        elif 25 <= poll_count < 30 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 50,
-                                            percent__gt = 40)
-        elif 20 <= poll_count < 25 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 40,
-                                            percent__gt = 30)
-        elif 15 <= poll_count < 20 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 30,
-                                            percent__gt = 20)
-        elif 10 <= poll_count < 15 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 20,
-                                            percent__gt = 10)
-        elif poll_count < 10 or (my_discounts and my_discounts.count() == 0):
-            my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 10)
-        else:
-            return Response({
-                'result': False,
-                'message': 'تخفیفی برای این فروشگاه یافت نشد.'
-            })
-        import random
-        index = random.randint(0, len(my_discounts))
-        product = my_discounts[index]
-        code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
-        while Discount.objects.filter(code = code).count() != 0:
-            code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
-        discount = Discount.objects.create(code = code, active = True, candidate_product = product, customer = customer)
-        product.count -= 1
-        product.save()
-        serializer = DiscountSerializer(discount)
-        return Response({
-            'result': True,
-            'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.',
-            'discount': serializer.data
-        })
+# class DiscountToCustomer(APIView):
+#     def post(self, request) -> Response:
+#         """
+#         TODO
+#         :param request:
+#         :return:
+#         """
+# shop = Shop.objects.get(id = request.data['shop'])
+# customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
+# my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answer__customer = customer,
+#                                  paragraph_poll__paragraph_poll_answer__poll_answer__completed = True) |
+#                                Q(short_answer_poll__short_answer_poll_answer__customer = customer,
+#                                  short_answer_poll__short_answer_poll_answer__poll_answer__completed = True) |
+#                                Q(linear_scale_poll__linear_scale_poll_answer__customer = customer,
+#                                  linear_scale_poll__linear_scale_poll_answer__poll_answer__completed = True) |
+#                                Q(check_box_poll__check_box_poll_answer__customer = customer,
+#                                  check_box_poll__check_box_poll_answer__poll_answer__completed = True) |
+#                                Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
+#                                  multiple_choice_poll__multiple_choice_answers__poll_answer__completed = True))
+#
+# poll_count = my_polls.filter(shop = shop).count()
+# discounts = CandidateProduct.objects.filter(shop = shop, count__gt = 0)
+# my_discounts = None
+# if 50 <= poll_count:
+#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 100,
+#                                     percent__gt = 90)
+# elif 45 <= poll_count < 50 or (my_discounts and my_discounts.count() == 0):
+#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 90,
+#                                     percent__gt = 80)
+# elif 40 <= poll_count < 45 or (my_discounts and my_discounts.count() == 0):
+#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 80,
+#                                     percent__gt = 70)
+# elif 35 <= poll_count < 40 or (my_discounts and my_discounts.count() == 0):
+#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 70,
+#                                     percent__gt = 60)
+# elif 30 <= poll_count < 35 or (my_discounts and my_discounts.count() == 0):
+#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 60,
+#                                     percent__gt = 50)
+# elif 25 <= poll_count < 30 or (my_discounts and my_discounts.count() == 0):
+#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 50,
+#                                     percent__gt = 40)
+# elif 20 <= poll_count < 25 or (my_discounts and my_discounts.count() == 0):
+#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 40,
+#                                     percent__gt = 30)
+# elif 15 <= poll_count < 20 or (my_discounts and my_discounts.count() == 0):
+#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 30,
+#                                     percent__gt = 20)
+# elif 10 <= poll_count < 15 or (my_discounts and my_discounts.count() == 0):
+#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 20,
+#                                     percent__gt = 10)
+# elif poll_count < 10 or (my_discounts and my_discounts.count() == 0):
+#     my_discounts = discounts.filter(expire_date__gte = timezone.now(), count__gt = 0, percent__lte = 10)
+# else:
+#     return Response({
+#         'result': False,
+#         'message': 'تخفیفی برای این فروشگاه یافت نشد.'
+#     })
+# import random
+# index = random.randint(0, len(my_discounts))
+# product = my_discounts[index]
+# code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
+# while Discount.objects.filter(code = code).count() != 0:
+#     code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
+# discount = Discount.objects.create(code = code, active = True, candidate_product = product, customer = customer)
+# product.count -= 1
+# product.save()
+# serializer = DiscountSerializer(discount)
+# return Response({
+#     'result': True,
+#     'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.',
+#     'discount': serializer.data
+# })
 
 
 # noinspection PyMethodMayBeStatic
@@ -617,7 +617,7 @@ class NotCompletedPollList(APIView):
         polls.extend(customer.paragraph_poll_answers.filter(completed = False))
         polls.extend(customer.short_answer_poll_answers.filter(completed = False))
         polls.extend(customer.multiple_choice_poll_answers.filter(completed = False))
-        polls.extend(customer.checkbox_poll_answers.filter(completed = False))
+        polls.extend(customer.check_box_poll_answers.filter(completed = False))
         polls.sort(key = lambda poll: poll.remaining_time)
         polls = polls[page - 1 * offset: page * offset]
         serializer = PollSerializer(polls, many = True)
@@ -848,14 +848,14 @@ class SubmitPoll(APIView):
             paragraph_poll_ans.poll_answer.completed = True
             paragraph_poll_ans.save()
         elif 'check_box_answer' in request.data:
-            checkbox_poll = poll.checkbox_poll
-            checkbox_poll_ans = CheckBoxPollAnswer.objects.get(checkbox_poll = checkbox_poll)
+            check_box_poll = poll.check_box_poll
+            check_box_poll_ans = CheckBoxPollAnswer.objects.get(check_box_poll = check_box_poll)
             answers = request.data['check_box_answer'][1:-1].split(',')
             print(answers)
             for ans in answers:
-                checkbox_poll_ans.options.add(checkbox_poll.options.get(index = int(ans)))
-            checkbox_poll_ans.poll_answer.completed = True
-            checkbox_poll_ans.save()
+                check_box_poll_ans.options.add(check_box_poll.options.get(index = int(ans)))
+            check_box_poll_ans.poll_answer.completed = True
+            check_box_poll_ans.save()
         else:
             multiple_choice_poll = poll.multiple_choice_poll
             multiple_choice_poll_ans = MultipleChoiceAnswer.objects.get(multiple_choice = multiple_choice_poll)
@@ -865,9 +865,65 @@ class SubmitPoll(APIView):
             multiple_choice_poll_ans.poll_answer.completed = True
             multiple_choice_poll_ans.save()
 
+        shop = Shop.objects.get(id = request.data['shop'])
+        my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answers__customer = customer,
+                                         paragraph_poll__paragraph_poll_answers__poll_answer__completed = True) |
+                                       Q(short_answer_poll__short_answer_poll_answers__customer = customer,
+                                         short_answer_poll__short_answer_poll_answers__poll_answer__completed = True) |
+                                       Q(linear_scale_poll__linear_scale_poll_answers__customer = customer,
+                                         linear_scale_poll__linear_scale_poll_answers__poll_answer__completed = True) |
+                                       Q(check_box_poll__check_box_poll_answers__customer = customer,
+                                         check_box_poll__check_box_poll_answers__poll_answer__completed = True) |
+                                       Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
+                                         multiple_choice_poll__multiple_choice_answers__poll_answer__completed = True))
+
+        poll_count = my_polls.filter(shop = shop).count()
+        discounts = CandidateProduct.objects.filter(expire_date__gte = timezone.now(), shop = shop, count__gt = 0)
+        my_discounts = None
+        if 50 <= poll_count:
+            my_discounts = discounts.filter(percent__lte = 100, percent__gt = 90)
+        if 45 <= poll_count < 50 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 90, percent__gt = 80)
+        if 40 <= poll_count < 45 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 80, percent__gt = 70)
+        if 35 <= poll_count < 40 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 70, percent__gt = 60)
+        if 30 <= poll_count < 35 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 60, percent__gt = 50)
+        if 25 <= poll_count < 30 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 50, percent__gt = 40)
+        if 20 <= poll_count < 25 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 40, percent__gt = 30)
+        if 15 <= poll_count < 20 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 30, percent__gt = 20)
+        if 10 <= poll_count < 15 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 20, percent__gt = 10)
+        if poll_count < 10 or (my_discounts and my_discounts.count() == 0):
+            my_discounts = discounts.filter(percent__lte = 10)
+        if my_discounts.count() == 0:
+            return Response({
+                'result': False,
+                'message': 'تخفیفی برای این فروشگاه یافت نشد.'
+            })
+        print("discounts:")
+        print(my_discounts)
+        import random
+        index = random.randint(0, len(my_discounts) - 1)
+        product = my_discounts[index]
+        code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
+        while Discount.objects.filter(code = code).count() != 0:
+            code = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k = 5))
+        discount = Discount.objects.create(code = code, active = True, candidate_product = product, customer = customer)
+        print(product.count)
+        product.count -= 1
+        print(product.count)
+        product.save()
+        print(product.count)
+        serializer = DiscountSerializer(discount)
         return Response({
             'result': True,
-            'message': 'نظر ثبت شد.'
+            'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.',
+            'discount': serializer.data
         })
 
 
@@ -878,14 +934,14 @@ class MyPolls(APIView):
     def post(self, request):
         customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
         print('*****')
-        all_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answer__customer = customer,
-                                          paragraph_poll__paragraph_poll_answer__poll_answer__completed = False) |
-                                        Q(short_answer_poll__short_answer_poll_answer__customer = customer,
-                                          short_answer_poll__short_answer_poll_answer__poll_answer__completed = False) |
-                                        Q(linear_scale_poll__linear_scale_poll_answer__customer = customer,
-                                          linear_scale_poll__linear_scale_poll_answer__poll_answer__completed = False) |
-                                        Q(checkbox_poll__checkbox_poll_answer__customer = customer,
-                                          checkbox_poll__checkbox_poll_answer__poll_answer__completed = False) |
+        all_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answers__customer = customer,
+                                          paragraph_poll__paragraph_poll_answers__poll_answer__completed = False) |
+                                        Q(short_answer_poll__short_answer_poll_answers__customer = customer,
+                                          short_answer_poll__short_answer_poll_answers__poll_answer__completed = False) |
+                                        Q(linear_scale_poll__linear_scale_poll_answers__customer = customer,
+                                          linear_scale_poll__linear_scale_poll_answers__poll_answer__completed = False) |
+                                        Q(check_box_poll__check_box_poll_answers__customer = customer,
+                                          check_box_poll__check_box_poll_answers__poll_answer__completed = False) |
                                         Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
                                           multiple_choice_poll__multiple_choice_answers__poll_answer__completed = False))
         print("&&&")
@@ -920,7 +976,7 @@ class MyPolls(APIView):
 
             else:
                 choices = []
-                for option in poll.checkbox_poll.options.all():
+                for option in poll.check_box_poll.options.all():
                     choices.append(option.answer_text)
                 data_poll.update({'choices': choices})
 
@@ -940,55 +996,64 @@ class PollToCustomer(APIView):
         """
         shop = Shop.objects.get(id = request.data['shop'])
         customer = Customer.objects.get(user__phone_number = request.data['phone_number'])
-        my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answer__customer = customer,
-                                         paragraph_poll__paragraph_poll_answer__poll_answer__completed = True) |
-                                       Q(short_answer_poll__short_answer_poll_answer__customer = customer,
-                                         short_answer_poll__short_answer_poll_answer__poll_answer__completed = True) |
-                                       Q(linear_scale_poll__linear_scale_poll_answer__customer = customer,
-                                         linear_scale_poll__linear_scale_poll_answer__poll_answer__completed = True) |
-                                       Q(checkbox_poll__checkbox_poll_answer__customer = customer,
-                                         checkbox_poll__checkbox_poll_answer__poll_answer__completed = True) |
+        my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answers__customer = customer,
+                                         paragraph_poll__paragraph_poll_answers__poll_answer__completed = True) |
+                                       Q(short_answer_poll__short_answer_poll_answers__customer = customer,
+                                         short_answer_poll__short_answer_poll_answers__poll_answer__completed = True) |
+                                       Q(linear_scale_poll__linear_scale_poll_answers__customer = customer,
+                                         linear_scale_poll__linear_scale_poll_answers__poll_answer__completed = True) |
+                                       Q(check_box_poll__check_box_poll_answers__customer = customer,
+                                         check_box_poll__check_box_poll_answers__poll_answer__completed = True) |
                                        Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
                                          multiple_choice_poll__multiple_choice_answers__poll_answer__completed = True))
-        not_my_polls = Poll.objects.filter((~Q(paragraph_poll__paragraph_poll_answer__customer = customer) &
-                                            ~Q(short_answer_poll__short_answer_poll_answer__customer = customer) &
-                                            ~Q(linear_scale_poll__linear_scale_poll_answer__customer = customer) &
-                                            ~Q(checkbox_poll__checkbox_poll_answer__customer = customer) &
+        print("my pollls:")
+        print(my_polls)
+        not_my_polls = Poll.objects.filter((~Q(paragraph_poll__paragraph_poll_answers__customer = customer) &
+                                            ~Q(short_answer_poll__short_answer_poll_answers__customer = customer) &
+                                            ~Q(linear_scale_poll__linear_scale_poll_answers__customer = customer) &
+                                            ~Q(check_box_poll__check_box_poll_answers__customer = customer) &
                                             ~Q(multiple_choice_poll__multiple_choice_answers__customer = customer)),
                                            shop = shop)
+        print("not my polls:")
+        print(not_my_polls)
 
         poll_count = my_polls.filter(shop = shop).count()
         print(not_my_polls.all().count())
         polls = None
         if 50 <= poll_count:
             polls = not_my_polls.filter(importance = 10, expire_date__gte = timezone.now())
-        elif 45 <= poll_count < 50 or (polls and polls.count() == 0):
+        if 45 <= poll_count < 50 or (polls and polls.count() == 0):
             polls = not_my_polls.filter(importance = 9, expire_date__gte = timezone.now())
-        elif 40 <= poll_count < 45 or (polls and polls.count() == 0):
+        if 40 <= poll_count < 45 or (polls and polls.count() == 0):
             polls = not_my_polls.filter(importance = 8, expire_date__gte = timezone.now())
-        elif 35 <= poll_count < 40 or (polls and polls.count() == 0):
+        if 35 <= poll_count < 40 or (polls and polls.count() == 0):
             polls = not_my_polls.filter(importance = 7, expire_date__gte = timezone.now())
-        elif 30 <= poll_count < 35 or (polls and polls.count() == 0):
+        if 30 <= poll_count < 35 or (polls and polls.count() == 0):
             polls = not_my_polls.filter(importance = 6, expire_date__gte = timezone.now())
-        elif 25 <= poll_count < 30 or (polls and polls.count() == 0):
+        if 25 <= poll_count < 30 or (polls and polls.count() == 0):
             polls = not_my_polls.filter(importance = 5, expire_date__gte = timezone.now())
-        elif 20 <= poll_count < 25 or (polls and polls.count() == 0):
+        if 20 <= poll_count < 25 or (polls and polls.count() == 0):
             polls = not_my_polls.filter(importance = 4, expire_date__gte = timezone.now())
-        elif 15 <= poll_count < 20 or (polls and polls.count() == 0):
+        if 15 <= poll_count < 20 or (polls and polls.count() == 0):
             polls = not_my_polls.filter(importance = 3, expire_date__gte = timezone.now())
-        elif 10 <= poll_count < 15 or (polls and polls.count() == 0):
+        if 10 <= poll_count < 15 or (polls and polls.count() == 0):
             polls = not_my_polls.filter(importance = 2, expire_date__gte = timezone.now())
-        elif poll_count < 10 or (polls and polls.count() == 0):
+        if poll_count < 10 or (polls and polls.count() == 0):
             polls = not_my_polls.filter(importance = 1, expire_date__gte = timezone.now())
-        else:
+        if polls.count() == 0:
             return Response({
                 'result': False,
                 'message': 'نظرسنجی ای یافت نشد.'
             })
 
+        print("possible polls:")
         print(polls)
         import random
-        index = random.randint(0, len(polls))
+        index = random.randint(0, len(polls) - 1)
+        print("len:")
+        print(len(polls))
+        print("index:")
+        print(index)
         poll = polls[index]
         print(type(polls[index]))
         poll_answer = PollAnswer.objects.create(completed = False)
@@ -997,8 +1062,8 @@ class PollToCustomer(APIView):
             LinearScalePollAnswer.objects.create(poll = poll.linear_scale_poll, customer = customer,
                                                  poll_answer = poll_answer)
         elif poll.type_poll == 'CheckBoxPoll':
-            print(poll.checkbox_poll)
-            CheckBoxPollAnswer.objects.create(checkbox_poll = poll.checkbox_poll, customer = customer,
+            print(poll.check_box_poll)
+            CheckBoxPollAnswer.objects.create(check_box_poll = poll.check_box_poll, customer = customer,
                                               poll_answer = poll_answer)
         elif poll.type_poll == 'MultipleChoicePoll':
             print(poll.multiple_choice_poll)

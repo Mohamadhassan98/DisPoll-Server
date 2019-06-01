@@ -56,6 +56,7 @@ class SalesmanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salesman
         fields = '__all__'
+        depth = 1
 
     def update(self, instance, validated_data):
         if os.path.isfile('new-temp/Salesman/' + instance.user.username + '.jpg'):

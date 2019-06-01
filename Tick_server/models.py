@@ -1,7 +1,8 @@
+import datetime
+import time
+
 from django.contrib.auth.models import AbstractUser, Permission
 from django.db import models
-from django.utils import timezone
-import time
 
 
 class City(models.Model):
@@ -86,7 +87,7 @@ class Poll(models.Model):
         (9, 9),
         (10, 10)
     )
-    poll_type = models.CharField(choices = POLL_TYPE, max_length = 20)
+    type_poll = models.CharField(choices = POLL_TYPE, max_length = 20)
     importance = models.IntegerField(choices = IMPORTANCE)
     expire_date = models.DateField()
     text = models.TextField()
@@ -140,7 +141,7 @@ class PollAnswer(models.Model):
         ('ShortAnswerPoll', 'ShortAnswerPoll'),
         ('ParagraphPoll', 'ParagraphPoll')
     )
-    poll_type = models.CharField(max_length = 20, choices = POLL_TYPE)
+    type_poll = models.CharField(max_length = 20, choices = POLL_TYPE)
 
 
 class ShortAnswerPollAnswer(models.Model):
@@ -224,7 +225,7 @@ class Discount(models.Model):
     code = models.CharField(max_length = 5, unique = True)
     customer = models.ForeignKey(Customer, on_delete = models.CASCADE, related_name = 'discounts')
     candidate_product = models.ForeignKey(CandidateProduct, on_delete = models.CASCADE, related_name = 'discounts')
-    start_date = models.DateField(default = timezone.now)
+    start_date = models.DateField(default = datetime.date.today)
 
 
 class Code4DigitSalesman(models.Model):
