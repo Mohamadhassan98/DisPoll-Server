@@ -92,20 +92,15 @@ class SignUpFinalCustomer(APIView):
         serializer = UserSerializer(data = copy)
         if not serializer.is_valid():
             print(serializer.errors)
-            return Response({
-                'result': False,
-                'message': 'ثبت‌نام با خطا مواجه شد.',
-            })
+            return Response(customer_signup_failed)
         else:
             user = serializer.save()
             Customer.objects.create(user = user)
             token, _ = Token.objects.get_or_create(user = user)
             Code4Digit.objects.get(phone_number = copy['phone_number']).delete()
-            return Response({
-                'result': True,
-                'message': 'ثبت‌نام با موفقیت انجام شد.',
-                'token': token.key
-            })
+            response = customer_signup_successful.copy()
+            response.update({'token': token.key})
+            return Response(response)
 
 
 # noinspection PyMethodMayBeStatic
@@ -308,7 +303,6 @@ class LoginSalesman(APIView):
         email = request.data['email']
         password = request.data['password']
         salesman = Salesman.objects.filter(user__email = email)
-
         if salesman.count() == 0:
             return Response({
                 'result': False,
@@ -355,7 +349,6 @@ class AddShop(APIView):
             })
         else:
             shop = serializer.save()
-            print(shop)
             return Response({
                 'result': True,
                 'message': 'اضافه کردن فروشگاه با موفقیت انجام شد.',
@@ -384,7 +377,6 @@ class AddDiscount(APIView):
         copy = request.data.copy()
         days = int(copy.pop('days')[0])
         count = int(copy.pop('count')[0])
-        print(type(count))
         percent = int(copy.pop('percent')[0])
         copy.update({'count': count})
         copy.update({'percent': percent})

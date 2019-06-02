@@ -14,3 +14,7 @@ customer_code_incorrect = {
     'result': False,
     'message': 'کد وارد شده صحیح نیست. لطفاً دوباره امتحان کنید.',
 }
+customer_signup_failed = {
+    'result': False,
+    'message': 'ثبت‌نام با خطا مواجه شد.',
+}

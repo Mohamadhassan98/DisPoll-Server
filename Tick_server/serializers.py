@@ -13,8 +13,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        print('validated data:')
-        print(validated_data)
         username = validated_data.pop('username')
         password = validated_data.pop('password')
         validated_data.pop('groups')
@@ -24,8 +22,6 @@ class UserSerializer(serializers.ModelSerializer):
         return CustomUser.objects.get(username = username)
 
     def update(self, instance: CustomUser, validated_data):
-        print('validated data:')
-        print(validated_data)
         instance.birth_date = validated_data.get('birth_date', instance.birth_date)
         instance.gender = validated_data.get('gender', instance.gender)
         instance.location = validated_data.get('location', instance.location)
