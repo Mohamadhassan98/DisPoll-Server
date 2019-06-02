@@ -69,11 +69,11 @@ class ResendCodeCustomer(APIView):
         @return: Response always contains true
         """
         phone = request.data['phone_number']
-        Code4Digit.objects.filter(phone_number = phone).update(code = '1111')
-        return Response({
-            'result': True,
-            'message': 'کد مجدداً ارسال شد.',
-        })
+        codes = Code4Digit.objects.filter(phone_number = phone)
+        if codes.count() == 0:
+            return Response(customer_code_resend_failed)
+        codes.update(code = '1111')
+        return Response(customer_code_resent)
 
 
 # noinspection PyMethodMayBeStatic
@@ -90,14 +90,18 @@ class SignUpFinalCustomer(APIView):
         copy = request.data.copy()
         copy.update({'user_type': 'CU'})
         serializer = UserSerializer(data = copy)
+        code = Code4Digit.objects.filter(phone_number = copy['phone_number'])
         if not serializer.is_valid():
             print(serializer.errors)
+            return Response(customer_signup_failed)
+        if code.count() == 0:
+            print('invalid phone_number specified')
             return Response(customer_signup_failed)
         else:
             user = serializer.save()
             Customer.objects.create(user = user)
             token, _ = Token.objects.get_or_create(user = user)
-            Code4Digit.objects.get(phone_number = copy['phone_number']).delete()
+            code[0].delete()
             response = customer_signup_successful.copy()
             response.update({'token': token.key})
             return Response(response)
@@ -119,24 +123,16 @@ class LoginCustomer(APIView):
         password = request.data['password']
         customer = Customer.objects.filter(user__phone_number = phone)
         if customer.count() == 0:
-            return Response({
-                'result': False,
-                'message': 'کاربری با این شماره یافت نشد.',
-            })
+            return Response(customer_not_found)
         if not customer[0].check_password(password):
-            return Response({
-                'result': False,
-                'message': 'رمز عبور اشتباه است.',
-            })
+            return Response(customer_wrong_password)
         login(request, customer[0].user)
         serializer = UserSerializer(customer[0].user)
         token, _ = Token.objects.get_or_create(user = customer[0].user)
-        return Response({
-            'result': True,
-            'message': 'ورود با موفقیت انجام شد.',
-            'customer_info': serializer.data,
-            'token': token.key
-        })
+        result = customer_login_successful.copy()
+        result.update({'customer_info': serializer.data})
+        result.update({'token': token.key})
+        return Response(result)
 
 
 # noinspection PyMethodMayBeStatic

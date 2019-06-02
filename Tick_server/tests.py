@@ -25,7 +25,6 @@ class CustomerCredentialTest(APITestCase):
         return response
 
     def __signup_final__(self):
-        City.objects.create(name = 'Isfahan')
         response = self.client.post('/signup-customer/complete-info/', {
             'phone_number': '09130172688',
             'birth_date': '1998-05-04',
@@ -52,7 +51,7 @@ class CustomerCredentialTest(APITestCase):
         })
         self.assertEqual(response.data, customer_code_incorrect)
         response = self.client.post('/signup-customer/confirm-phone/', {
-            'phone_number': '09223878988',
+            'phone_number': '09130172688',
             'code': '1234'
         })
         self.assertEqual(response.data, customer_code_incorrect)
@@ -62,6 +61,7 @@ class CustomerCredentialTest(APITestCase):
     def test_unit_signup_final(self):
         self.__signup_first__()
         self.__signup_second__()
+        City.objects.create(name = 'Isfahan')
         response = self.client.post('/signup-customer/complete-info/', {
             'phone_number': '09130172687',
             'birth_date': '1998-05-04',
@@ -121,6 +121,37 @@ class CustomerCredentialTest(APITestCase):
         result = customer_signup_successful.copy()
         result.update({'token': token.key})
         self.assertEqual(response.data, result)
+        user = CustomUser.objects.filter(phone_number = '09130172688', birth_date = '1998-05-04', gender = 'm',
+                                         location = '32.615878, 51.618149', city = 1, username = 'mohamadhassan98',
+                                         email = 'emohamadhassan@gmail.com')
+        self.assertEqual(user.count(), 1)
+        self.assertEqual(user[0].check_password('123456'), True)
+        self.assertEqual(Customer.objects.filter(user = user[0]).count(), 1)
 
+    def test_unit_resend_code(self):
+        self.__signup_first__()
+        response = self.client.post('/signup-customer/resend-code/', {
+            'phone_number': '09130172688'
+        })
+        self.assertEqual(response.data, customer_code_resent)
+        self.__signup_first__()
+        response = self.client.post('/signup-customer/resend-code/', {
+            'phone_number': '09130172689'
+        })
+        self.assertEqual(response.data, customer_code_resend_failed)
 
-
+    def test_unit_login(self):
+        self.__signup_first__()
+        self.__signup_second__()
+        self.__signup_final__()
+        response = self.client.post('/login-customer/', {
+            'phone_number': '09130172688',
+            'password': '123456'
+        })
+        result = customer_login_successful.copy()
+        # FIXME('Do it together')
+        # result.update({
+        #     'phone_number': '09130172688',
+        #     ''
+        # })
+        # self.assertEqual(response.data, )
