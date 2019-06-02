@@ -1,65 +1,45 @@
-from Tick_server.serializers import CustomerSerializer, UserSerializer
+from rest_framework.test import APITestCase
 
-customer = \
-    {
-        'phone_number': '09131674340'
-    }
-
-serializer = CustomerSerializer(data = customer)
-serializer.is_valid()
-serializer.save()
-
-if __name__ == '__main__':
-    class B:
-        pass
+from Tick_server.models import *
+from Tick_server.responses import *
 
 
-    class A:
-        def __init__(self):
-            self.a = 2
-            self.b = B()
+class CustomerCredentialTest(APITestCase):
+
+    def test_scenario(self):
+        self.signup_first()
+        self.signup_second()
+
+    # ####Unit tests################################################################################################## #
+    def test_unit_signup_first(self):
+        response = self.client.post('/signup-customer/phone-auth/', {
+            'phone_number': '09130172688'
+        })
+        self.assertEqual(response.data, phone_added_successfully)
+        self.assertEqual(Code4Digit.objects.filter(phone_number = '09130172688').count(), 1)
+
+    def test_unit_signup_second(self):
+        self.client.post('/signup-customer/phone-auth/', {
+            'phone_number': '09130172688'
+        })
+        response = self.client.post('/signup-customer/confirm-phone/', {
+            'phone_number': '09130172688',
+            'code': '1111'
+        })
+        self.assertEqual(response.data, customer_signup_successful)
+        response = self.client.post('/signup-customer/confirm-phone/', {
+            'phone_number': '09223878988',
+            'code': '1111'
+        })
+        self.assertEqual(response.data, customer_code_incorrect)
+        response = self.client.post('/signup-customer/confirm-phone/', {
+            'phone_number': '09223878988',
+            'code': '1234'
+        })
+        self.assertEqual(response.data, customer_code_incorrect)
 
 
-    import json
+    def signup_final(self):
+        data = {
 
-    a = A()
-    print(json.dumps(a))
-
-c1 = \
-    {
-        'phone_number': '09130172688',
-        'username': 'mohamadhassan',
-        'password': '1234',
-        'user_type': 'CU',
-        'errors': '1234444'
-    }
-
-ser = UserSerializer(data = c1)
-ser.is_valid()
-
-c2 = \
-    {
-        'user':
-            {
-                'phone_number': '09130172688',
-                'username': 'mohamadhassan',
-                'password': '1234',
-                'user_type': 'CU'
-            }
-    }
-ser = CustomerSerializer(data = {})
-ser.is_valid()
-
-c3 = \
-    {
-        'phone_number': '09130172688',
-        'username': 'mohamadhassan',
-        'password': '1234'
-    }
-ser = CustomerSerializer(c3)
-ser.is_valid()
-
-from Tick_server.models import CustomUser
-
-user = CustomUser.objects.create(user_type = 'CU', phone_number = '09130172688', username = 'mohamadhassan',
-                                 password = '12345')
+        }

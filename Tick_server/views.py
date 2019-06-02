@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from Tick_server.models import *
+from Tick_server.responses import *
 from Tick_server.serializers import *
 
 
@@ -31,16 +32,10 @@ class SignUpFirstCustomer(APIView):
         """
         phone = request.data['phone_number']
         if Customer.objects.filter(user__phone_number = phone).count() == 1:
-            return Response({
-                'result': False,
-                'message': 'کاربری با این شماره تلفن قبلاً ثبت‌نام کرده.',
-            })
+            return Response(customer_already_exists)
         else:
             Code4Digit.objects.update_or_create(phone_number = phone, defaults = {'code': '1111'})
-            return Response({
-                'result': True,
-                'message': 'شماره تلفن با موفقیت ثبت شد.',
-            })
+            return Response(phone_added_successfully)
 
 
 # noinspection PyMethodMayBeStatic
@@ -57,15 +52,9 @@ class SignUpSecondCustomer(APIView):
         phone = request.data['phone_number']
         code = request.data['code']
         if Code4Digit.objects.filter(phone_number = phone, code = code).count() == 1:
-            return Response({
-                'result': True,
-                'message': 'ثبت‌نام با موفقیت انجام شد.',
-            })
+            return Response(customer_signup_successful)
         else:
-            return Response({
-                'result': False,
-                'message': 'کد وارد شده صحیح نیست. لطفاً دوباره امتحان کنید.',
-            })
+            return Response(customer_code_incorrect)
 
 
 # noinspection PyMethodMayBeStatic
@@ -517,7 +506,7 @@ class GetShopKinds(APIView):
             data.append({'id': kind.pk, 'name': kind.name})
         return Response({
             'result': True,
-            'message': 'نام شهرها',
+            'message': 'نوع فروشگاه ها',
             'shop_kinds': data
         })
 
