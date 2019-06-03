@@ -10,11 +10,15 @@ class CustomerCredentialTest(APITransactionTestCase):
     def setUp(self) -> None:
         self.phone_number = '09130172688'
         self.code = '1111'
+        self.username = 'mohamadhassan98'
+        self.password = '123456'
+        self.admin_key = 'd225d74e7447c5dc66e2845fdd23d0b02be3ba4f'
 
     def __signup_first__(self):
-        response = self.client.post('/signup-customer/phone-auth/', {
-            'phone_number': self.phone_number
-        })
+        response = self.client.post('/signup-customer/phone-auth/', **{'HTTP_Authorization': 'Token ' + self.admin_key},
+                                    data = {
+                                        'phone_number': self.phone_number
+                                    })
         return response
 
     def __signup_second__(self):
@@ -26,14 +30,14 @@ class CustomerCredentialTest(APITransactionTestCase):
 
     def __signup_final__(self):
         response = self.client.post('/signup-customer/complete-info/', {
-            'phone_number': '09130172688',
+            'phone_number': self.phone_number,
             'birth_date': '1998-05-04',
             'gender': 'm',
             'location': '32.615878, 51.618149',
             'city': '1',
-            'username': 'mohamadhassan98',
+            'username': self.username,
             'email': 'emohamadhassan@gmail.com',
-            'password': '123456'
+            'password': self.password
         })
         return response
 
@@ -47,11 +51,11 @@ class CustomerCredentialTest(APITransactionTestCase):
         Code4Digit.objects.create(phone_number = self.phone_number, code = self.code)
         response = self.client.post('/signup-customer/confirm-phone/', {
             'phone_number': '09223878988',
-            'code': '1111'
+            'code': self.code
         })
         self.assertEqual(response.data, customer_code_incorrect)
         response = self.client.post('/signup-customer/confirm-phone/', {
-            'phone_number': '09130172688',
+            'phone_number': self.phone_number,
             'code': '1234'
         })
         self.assertEqual(response.data, customer_code_incorrect)

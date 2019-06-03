@@ -1121,15 +1121,17 @@ class GetShops(APIView):
         @return: Response having all shops.
         """
         shops = None
-        if 'shop_kind' in request.data:
-            shops = Shop.objects.filter(shop_kind_id = request.data['shop_kind'])
-        if 'name' in request.data:
-            if shops:
-                shops = shops.filter(name__contains = request.data['name'])
-            else:
-                shops = Shop.objects.filter(name__contains = request.data['name'])
-        if not shops and 'shop_kind' not in request.data and 'name' not in request.data:
-            shops = Shop.objects.all()
+        page = int(request.data['page'])
+        offset = int(request.data['offset'])
+        if 'shop_kind' in request.data and 'name' not in request.data:
+            shops = Shop.objects.filter(shop_kind_id = request.data['shop_kind'])[page * offset: page * offset + offset]
+        if 'name' in request.data and 'shop_kind' not in request.data:
+            shops = Shop.objects.filter(name__contains = request.data['name'])[page * offset: page * offset + offset]
+        if 'shop_kind' not in request.data and 'name' not in request.data:
+            shops = Shop.objects.all()[page * offset: page * offset + offset]
+        if 'shop_kind' in request.data and 'name' in request.data:
+            shops = Shop.objects.filter(shop_kind_id = request.data['shop_kind'],
+                                        name__contains = request.data['name'])[page * offset: page * offset + offset]
         data = []
         for shop in shops:
             serializer = GetShopSerializer(shop)
