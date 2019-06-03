@@ -50,6 +50,7 @@ urlpatterns = [
     path('my-polls/', MyPolls.as_view()),
     path('poll-to-customer/', PollToCustomer.as_view()),
     path('edit-shop/', EditShop.as_view()),
-    path('shops/', GetShops.as_view())
+    path('shops/', GetShops.as_view()),
+    path('shop/', GetShopById.as_view()),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
