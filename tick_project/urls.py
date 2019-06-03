@@ -52,5 +52,9 @@ urlpatterns = [
     path('edit-shop/', EditShop.as_view()),
     path('shops/', GetShops.as_view()),
     path('shop/', GetShopById.as_view()),
+    path('add-advertisement/', Advertise.as_view()),
+    path('get-ads/', GetAds.as_view()),
+    path('inactive-discount/', InActiveDiscount.as_view()),
+    path('statistics/', Statistics.as_view())
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

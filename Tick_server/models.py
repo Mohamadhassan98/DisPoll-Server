@@ -244,7 +244,7 @@ class Code4DigitSalesman(models.Model):
 
 
 def upload_advertisement_to_path(instance, filename):
-    return 'Advertisement/' + str(instance.shop.id) + '.jpg'
+    return 'Advertisement/' + 'advetisement_' + str(instance.shop.id) + '.jpg'
 
 
 class Advertisement(models.Model):

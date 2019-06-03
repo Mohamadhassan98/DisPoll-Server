@@ -1264,12 +1264,12 @@ class Statistics(APIView):
             count = poll.linear_scale_poll.choices_count
             possible_answers = {}
             while count:
-                possible_answers[str(start + step * (count - 1))] = 0
+                possible_answers[start + step * (count - 1)] = 0
                 count -= 1
             linear_scale_answers = LinearScalePollAnswer.objects.filter(poll__poll = poll)
             for answer in linear_scale_answers:
                 total_submissions += 1
-                possible_answers[answer.answer_text] += 1
+                possible_answers[answer.answer] += 1
             data = {'result': True,
                     'message': 'جواب های نظرسنجی',
                     'total_submission': total_submissions
@@ -1297,7 +1297,7 @@ class Statistics(APIView):
                 'total_submissions': total_submissions
             }
             index = 0
-            for key, value in possible_answers.values():
+            for key, value in possible_answers.items():
                 tmp = 'option_' + str(index)
                 index += 1
                 data.update({tmp: value})
@@ -1311,15 +1311,19 @@ class Statistics(APIView):
             for option in options:
                 possible_answers[option.answer_text] = 0
             for answer in check_box_answers:
-                total_submissions += 1
-                possible_answers[answer.option.answer_text] += 1
+                options = answer.options.all()
+                print(options)
+                for option in options:
+                    total_submissions += 1
+                    possible_answers[option.answer_text] += 1
+                print(possible_answers)
             data = {
                 'result': True,
                 'message': 'جواب های نظرسنجی',
                 'total_submissions': total_submissions
             }
             index = 0
-            for key, value in possible_answers.values():
+            for key, value in possible_answers.items():
                 tmp = 'option_' + str(index)
                 index += 1
                 data.update({tmp: value})
@@ -1332,7 +1336,7 @@ class Advertise(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-        serializer = AdvertisementSerializer(request.data)
+        serializer = AdvertisementSerializer(data = request.data)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
