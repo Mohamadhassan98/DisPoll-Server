@@ -310,10 +310,20 @@ class LoginSalesman(APIView):
             })
         login(request, salesman[0].user)
         serializer = SalesmanSerializer(salesman[0])
+        request.data._mutable = True
+        copy = serializer.data.copy()
+        id_user = copy.pop('user')
+        user = CustomUser.objects.get(id = id_user)
+        print(copy)
+        shops = salesman[0].shops.all()
+        shops_list = []
+        for shop in shops:
+            shops_list.append({'id': shop.id, 'name': shop.name})
+        copy.update({'first_name': user.first_name, 'last_name': user.last_name, 'shops': shops_list})
         return Response({
             'result': True,
             'message': 'ورود با موفقیت انجام شد.',
-            'salesman': serializer.data
+            'salesman': copy
         })
 
 
