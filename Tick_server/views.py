@@ -77,8 +77,8 @@ class ResendCodeCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpFinalCustomer(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
     def post(self, request) -> Response:
         """
