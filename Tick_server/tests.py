@@ -1,5 +1,5 @@
 from rest_framework.authtoken.models import Token
-from rest_framework.test import APITransactionTestCase, APITestCase
+from rest_framework.test import APITransactionTestCase
 
 from Tick_server.models import *
 from Tick_server.responses import *
@@ -7,20 +7,20 @@ from Tick_server.responses import *
 
 class CustomerCredentialTest(APITransactionTestCase):
 
-    def test_scenario(self):
-        self.__signup_first__()
-        self.__signup_second__()
+    def setUp(self) -> None:
+        self.phone_number = '09130172688'
+        self.code = '1111'
 
     def __signup_first__(self):
         response = self.client.post('/signup-customer/phone-auth/', {
-            'phone_number': '09130172688'
+            'phone_number': self.phone_number
         })
         return response
 
     def __signup_second__(self):
         response = self.client.post('/signup-customer/confirm-phone/', {
-            'phone_number': '09130172688',
-            'code': '1111'
+            'phone_number': self.phone_number,
+            'code': self.code
         })
         return response
 
@@ -41,10 +41,10 @@ class CustomerCredentialTest(APITransactionTestCase):
     def test_unit_signup_first(self):
         response = self.__signup_first__()
         self.assertEqual(response.data, phone_added_successfully)
-        self.assertEqual(Code4Digit.objects.filter(phone_number = '09130172688').count(), 1)
+        self.assertEqual(Code4Digit.objects.filter(phone_number = self.phone_number).count(), 1)
 
     def test_unit_signup_second(self):
-        self.__signup_first__()
+        Code4Digit.objects.create(phone_number = self.phone_number, code = self.code)
         response = self.client.post('/signup-customer/confirm-phone/', {
             'phone_number': '09223878988',
             'code': '1111'
@@ -59,9 +59,8 @@ class CustomerCredentialTest(APITransactionTestCase):
         self.assertEqual(response.data, customer_signup_successful)
 
     def test_unit_signup_final(self):
-        self.__signup_first__()
-        self.__signup_second__()
-        City.objects.create(name = 'Isfahan')
+        Code4Digit.objects.create(phone_number = self.phone_number, code = self.code)
+        City.objects.create(name = 'اصفهان')
         response = self.client.post('/signup-customer/complete-info/', {
             'phone_number': '09130172687',
             'birth_date': '1998-05-04',
@@ -167,35 +166,3 @@ class CustomerCredentialTest(APITransactionTestCase):
                                          email = 'qwerty@azerty.asd')
         customer.user = user
         customer.save()
-
-
-class Test(APITestCase):
-    # def setUp(self) -> None:
-    #     self.databases += {'default'}
-    def __init__(self, methodname: str):
-        self.arg = 0
-        super().__init__(methodname)
-
-    def setUp(self) -> None:
-        print('Yup.')
-        if self.arg == 1:
-            print('arg: 1')
-            self.client.post('/signup-customer/phone-auth/', {
-                'phone_number': '09130172688'
-            })
-
-    def test2(self):
-        response = self.client.post('/signup-customer/confirm-phone/', {
-            'phone_number': '09130172688',
-            'code': '1111'
-        })
-        print(response.data)
-        self.arg = 1
-        self.setUp()
-
-    def test3(self):
-        response = self.client.post('/signup-customer/confirm-phone/', {
-            'phone_number': '09130172688',
-            'code': '1111'
-        })
-        print(response.data)

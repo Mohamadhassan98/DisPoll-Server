@@ -20,8 +20,8 @@ from Tick_server.serializers import *
 
 # noinspection PyMethodMayBeStatic
 class SignUpFirstCustomer(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
     def post(self, request) -> Response:
         """
@@ -29,6 +29,8 @@ class SignUpFirstCustomer(APIView):
         @param request: includes I{phone_number} only
         @return: Response showing whether saving phone number was successful or not.
         """
+        if not request.user.is_superuser:
+            return Response(access_denied)
         phone = request.data['phone_number']
         if Customer.objects.filter(user__phone_number = phone).count() == 1:
             return Response(customer_already_exists)
@@ -39,8 +41,8 @@ class SignUpFirstCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpSecondCustomer(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
     def post(self, request) -> Response:
         """
@@ -48,6 +50,8 @@ class SignUpSecondCustomer(APIView):
         @param request: includes phone number and code
         @return: Response showing whether the code is valid and sign up is successful or not
         """
+        if not request.user.is_superuser:
+            return Response(access_denied)
         phone = request.data['phone_number']
         code = request.data['code']
         if Code4Digit.objects.filter(phone_number = phone, code = code).count() == 1:
@@ -58,8 +62,8 @@ class SignUpSecondCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class ResendCodeCustomer(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
     def post(self, request) -> Response:
         """
@@ -67,6 +71,8 @@ class ResendCodeCustomer(APIView):
         @param request: includes phone number only
         @return: Response always contains true
         """
+        if not request.user.is_superuser:
+            return Response(access_denied)
         phone = request.data['phone_number']
         codes = Code4Digit.objects.filter(phone_number = phone)
         if codes.count() == 0:
@@ -77,8 +83,8 @@ class ResendCodeCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpFinalCustomer(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
     def post(self, request) -> Response:
         """
@@ -86,6 +92,8 @@ class SignUpFinalCustomer(APIView):
         @param request: includes phone number and all necessary information to create new user
         @return: Response showing whether sign up is successful or not
         """
+        if not request.user.is_superuser:
+            return Response(access_denied)
         copy = request.data.copy()
         copy.update({'user_type': 'CU'})
         serializer = UserSerializer(data = copy)
@@ -108,8 +116,8 @@ class SignUpFinalCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class LoginCustomer(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
     def post(self, request) -> Response:
         """
@@ -118,6 +126,8 @@ class LoginCustomer(APIView):
         @return: Response showing whether login is successful or not, if login is successful then sends all user
         information
         """
+        if not request.user.is_superuser:
+            return Response(access_denied)
         phone = request.data['phone_number']
         password = request.data['password']
         customer = Customer.objects.filter(user__phone_number = phone)
@@ -150,10 +160,7 @@ class EditCustomerProfile(APIView):
         _mutable = request.data._mutable
         request.data._mutable = True
         if customer.count() == 0:
-            return Response({
-                'result': False,
-                'message': 'دسترسی رد شد.'
-            })
+            return Response(access_denied)
         customer = customer[0]
         if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
@@ -1135,7 +1142,7 @@ class GetShops(APIView):
             shops = Shop.objects.all()
         data = []
         for shop in shops:
-            serializer = ShopSerializer(shop)
+            serializer = GetShopSerializer(shop)
             data.append(serializer.data)
         if data:
             return Response({

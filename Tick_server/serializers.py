@@ -153,3 +153,10 @@ class ShortAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShortAnswerPoll
         fields = '__all__'
+
+
+class GetShopSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shop
+        fields = '__all__'
+        depth = 1
