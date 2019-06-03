@@ -1,1 +1,30 @@
 # Register your models here.
+from django.contrib import admin
+
+from Tick_server.models import *
+
+admin.site.register(City)
+admin.site.register(CustomUser)
+admin.site.register(Customer)
+admin.site.register(Salesman)
+admin.site.register(ShopKind)
+admin.site.register(Shop)
+admin.site.register(Poll)
+admin.site.register(ShortAnswerPollAnswer)
+admin.site.register(ParagraphPoll)
+admin.site.register(LinearScalePoll)
+admin.site.register(MultipleChoiceAnswer)
+admin.site.register(MultipleChoicePoll)
+admin.site.register(CheckBoxPoll)
+admin.site.register(ShortAnswerPoll)
+admin.site.register(PollAnswer)
+admin.site.register(CheckBoxOption)
+admin.site.register(CheckBoxPollAnswer)
+admin.site.register(ParagraphPollAnswer)
+admin.site.register(LinearScalePollAnswer)
+admin.site.register(MultipleChoiceOption)
+admin.site.register(Code4Digit)
+admin.site.register(Code4DigitSalesman)
+admin.site.register(Branch)
+admin.site.register(CandidateProduct)
+admin.site.register(Discount)

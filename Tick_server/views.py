@@ -7,6 +7,8 @@ from django.core.files import File
 from django.db import transaction
 from django.http import FileResponse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
@@ -295,6 +297,7 @@ class LoginSalesman(APIView):
     permission_classes = []
     authentication_classes = []
 
+    @method_decorator(ensure_csrf_cookie)
     def post(self, request) -> Response:
         """
         Gets email or username and login credentials of a user and tries to login that user
@@ -323,15 +326,21 @@ class LoginSalesman(APIView):
         user = CustomUser.objects.get(id = id_user)
         print(copy)
         shops = salesman[0].shops.all()
+
         shops_list = []
         for shop in shops:
             shops_list.append({'id': shop.id, 'name': shop.name})
         copy.update({'first_name': user.first_name, 'last_name': user.last_name, 'shops': shops_list})
-        return Response({
+        response = Response({
             'result': True,
             'message': 'ورود با موفقیت انجام شد.',
             'salesman': copy
         })
+        response.set_cookie(key = 'csrftoken', value = '1234567890123456789234567')
+        print('before')
+        print(response.cookies)
+        print('before')
+        return response
 
 
 # noinspection PyMethodMayBeStatic
@@ -1119,10 +1128,10 @@ class EditShop(APIView):
             })
 
 
-# noinspection PyUnusedLocal, PyMethodMayBeStatic
+# noinspection PyUnusedLocal, PyMethodMayBeStatic, PyUnboundLocalVariable
 class GetShops(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
 
     def post(self, request) -> Response:
         """
@@ -1130,6 +1139,8 @@ class GetShops(APIView):
         @param request: Unused.
         @return: Response having all shops.
         """
+        if not request.user.is_superuser:
+            return Response(access_denied)
         shops = []
         if 'shop_kinds' in request.data:
             shop_kinds = request.data['shop_kinds'][1:-1].split(',')

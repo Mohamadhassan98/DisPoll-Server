@@ -1,6 +1,7 @@
 import os
 
 from rest_framework import serializers
+from rest_framework.exceptions import ErrorDetail
 
 from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, \
     Shop, CandidateProduct, ShopKind, City, CheckBoxPoll, CheckBoxOption, \
@@ -11,6 +12,18 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = '__all__'
+
+    def validate(self, attrs):
+        if attrs['user_type'] == 'CU':
+            if CustomUser.objects.filter(phone_number = attrs['phone_number'], user_type = 'CU').count() != 0:
+                raise serializers.ValidationError(
+                    {'phone_number': [
+                        ErrorDetail(string = 'A user with that phone_number already exists.', code = 'unique')]})
+        if attrs['user_type'] == 'SM':
+            if CustomUser.objects.filter(email = attrs['email'], user_type = 'SM').count() != 0:
+                raise serializers.ValidationError(
+                    {'email': [ErrorDetail(string = 'A user with that email already exists.', code = 'unique')]})
+        return attrs
 
     def create(self, validated_data):
         username = validated_data.pop('username')
