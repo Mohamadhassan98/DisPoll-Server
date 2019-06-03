@@ -1174,7 +1174,7 @@ class GetShops(APIView):
             })
         else:
             return Response({
-                'result': False,
+                'result': True,
                 'message': 'فروشگاهی یافت نشد.'
             })
 
@@ -1226,4 +1226,154 @@ class GetShopById(APIView):
         return Response({
             'result': True,
             'message': serializer.data
+        })
+
+
+# noinspection PyMethodMayBeStatic
+class InActiveDiscount(APIView):
+    def post(self, request):
+        discount = Discount.objects.get(id = request.data['discount_id'])
+        discount.active = False
+        discount.save()
+
+
+# noinspection PyMethodMayBeStatic
+class Statistics(APIView):
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        salesman = request.user.salesman
+        shops = Shop.objects.filter(salesman = salesman)
+        poll = Poll.objects.get(id = request.data['poll_id'])
+        if shops.filter(id = poll.shop_id).count() == 0:
+            return Response(access_denied)
+        if poll.type_poll == 'ShortAnswerPoll':
+            answers = []
+            short_poll_answers = ShortAnswerPollAnswer.objects.filter(poll__poll = poll)
+            for answer in short_poll_answers:
+                answers.append(answer.answer_text)
+            return Response({
+                'result': True,
+                'message': 'پاسخ های کوتاه',
+                'all_answers': answers
+            })
+        elif poll.type_poll == 'ParagraphPoll':
+            answers = []
+            paragraph_poll_answers = ParagraphPollAnswer.objects.filter(poll__poll = poll)
+            for answer in paragraph_poll_answers:
+                answers.append(answer.answer_text)
+            return Response({
+                'result': True,
+                'message': 'جواب های نظرسنجی',
+                'all_answers': answers
+            })
+        elif poll.type_poll == 'LinearScalePoll':
+            total_submissions = 0
+            start = poll.linear_scale_poll.start
+            step = poll.linear_scale_poll.step
+            count = poll.linear_scale_poll.choices_count
+            possible_answers = {}
+            while count:
+                possible_answers[str(start + step * (count - 1))] = 0
+                count -= 1
+            linear_scale_answers = LinearScalePollAnswer.objects.filter(poll__poll = poll)
+            for answer in linear_scale_answers:
+                total_submissions += 1
+                possible_answers[answer.answer_text] += 1
+            data = {'result': True,
+                    'message': 'جواب های نظرسنجی',
+                    'total_submission': total_submissions
+                    }
+            index = 1
+            for key, value in possible_answers.items():
+                tmp = 'option_' + str(index)
+                index += 1
+                data.update({tmp: value})
+            return Response(data = data)
+        elif poll.type_poll == 'MultipleChoicePoll':
+            multiple_choice_poll = poll.multiple_choice_poll
+            multiple_choice_answers = MultipleChoiceAnswer.objects.filter(multiple_choice__poll = poll)
+            possible_answers = {}
+            options = multiple_choice_poll.options.all()
+            total_submissions = 0
+            for option in options:
+                possible_answers[option.answer_text] = 0
+            for answer in multiple_choice_answers:
+                total_submissions += 1
+                possible_answers[answer.option.answer_text] += 1
+            data = {
+                'result': True,
+                'message': 'جواب های نظرسنجی',
+                'total_submissions': total_submissions
+            }
+            index = 0
+            for key, value in possible_answers.values():
+                tmp = 'option_' + str(index)
+                index += 1
+                data.update({tmp: value})
+            return Response(data = data)
+        elif poll.type_poll == 'CheckBoxPoll':
+            check_box_poll = poll.check_box_poll
+            check_box_answers = CheckBoxPollAnswer.objects.filter(check_box_poll__poll = poll)
+            options = check_box_poll.options.all()
+            possible_answers = {}
+            total_submissions = 0
+            for option in options:
+                possible_answers[option.answer_text] = 0
+            for answer in check_box_answers:
+                total_submissions += 1
+                possible_answers[answer.option.answer_text] += 1
+            data = {
+                'result': True,
+                'message': 'جواب های نظرسنجی',
+                'total_submissions': total_submissions
+            }
+            index = 0
+            for key, value in possible_answers.values():
+                tmp = 'option_' + str(index)
+                index += 1
+                data.update({tmp: value})
+            return Response(data = data)
+
+
+# noinspection PyMethodMayBeStatic
+class Advertise(APIView):
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = AdvertisementSerializer(request.data)
+        if not serializer.is_valid():
+            print(serializer.errors)
+            return Response({
+                'result': False,
+                'message': 'اضافه کردن تبلیغ با خطا مواجه شد.'
+            })
+        else:
+            serializer.save()
+            return Response({
+                'result': True,
+                'message': 'اضافه کردن تبلیغ با موفقیت انجام شد.'
+            })
+
+
+# noinspection PyMethodMayBeStatic
+class GetAds(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
+
+    def post(self, request):
+        salesman = request.user.salesman
+        if salesman.shops.filter(id = request.data['shop']).count() == 0:
+            return Response(access_denied)
+        advertisements = Advertisement.objects.all()
+        ads = []
+        for ad in advertisements:
+            serializer = GetAdvertisementSerializer(ad)
+            ads.append(serializer.data)
+        return Response({
+            'result': True,
+            'message': 'تبلیغ ها',
+            'ads': ads
         })
