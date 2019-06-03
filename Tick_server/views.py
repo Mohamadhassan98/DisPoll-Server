@@ -1125,7 +1125,7 @@ class GetShops(APIView):
             shops = Shop.objects.all()
         data = []
         for shop in shops:
-            serializer = ShopSerializer(shop)
+            serializer = GetShopSerializer(shop)
             data.append(serializer.data)
         if data:
             return Response({
