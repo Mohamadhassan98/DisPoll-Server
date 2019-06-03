@@ -3,6 +3,7 @@ import time
 
 from django.contrib.auth.models import AbstractUser, Permission
 from django.db import models
+from django.db.models import Q
 
 
 class City(models.Model):
@@ -23,8 +24,16 @@ class CustomUser(AbstractUser):
     )
     gender = models.CharField(max_length = 1, choices = GENDER, null = True, blank = True)
     location = models.CharField(max_length = 100, null = True, blank = True)
-    phone_number = models.CharField(max_length = 13, unique = True)
+    phone_number = models.CharField(max_length = 13)
     city = models.ForeignKey(City, on_delete = models.CASCADE, related_name = 'users', null = True, blank = True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields = ['user_type', 'email'], condition = Q(user_type = 'SM'),
+                                    name = 'unique_salesman_identity'),
+            models.UniqueConstraint(fields = ['user_type', 'phone_number'], condition = Q(user_type = 'CU'),
+                                    name = 'unique_customer_identity')
+        ]
 
 
 # noinspection PyUnusedLocal

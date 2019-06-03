@@ -1,11 +1,11 @@
 from rest_framework.authtoken.models import Token
-from rest_framework.test import APITestCase
+from rest_framework.test import APITransactionTestCase, APITestCase
 
 from Tick_server.models import *
 from Tick_server.responses import *
 
 
-class CustomerCredentialTest(APITestCase):
+class CustomerCredentialTest(APITransactionTestCase):
 
     def test_scenario(self):
         self.__signup_first__()
@@ -155,3 +155,47 @@ class CustomerCredentialTest(APITestCase):
         #     ''
         # })
         # self.assertEqual(response.data, )
+
+    def test_temp(self):
+        customer = Customer()
+        user = CustomUser.objects.create(username = 'ali', password = '123456789', phone_number = '09876543210',
+                                         email = 'qwerty@azerty.asd')
+        customer.user = user
+        customer.save()
+        customer = Customer()
+        user = CustomUser.objects.create(username = 'hassan', password = '123456789', phone_number = '09876543210',
+                                         email = 'qwerty@azerty.asd')
+        customer.user = user
+        customer.save()
+
+
+class Test(APITestCase):
+    # def setUp(self) -> None:
+    #     self.databases += {'default'}
+    def __init__(self, methodname: str):
+        self.arg = 0
+        super().__init__(methodname)
+
+    def setUp(self) -> None:
+        print('Yup.')
+        if self.arg == 1:
+            print('arg: 1')
+            self.client.post('/signup-customer/phone-auth/', {
+                'phone_number': '09130172688'
+            })
+
+    def test2(self):
+        response = self.client.post('/signup-customer/confirm-phone/', {
+            'phone_number': '09130172688',
+            'code': '1111'
+        })
+        print(response.data)
+        self.arg = 1
+        self.setUp()
+
+    def test3(self):
+        response = self.client.post('/signup-customer/confirm-phone/', {
+            'phone_number': '09130172688',
+            'code': '1111'
+        })
+        print(response.data)

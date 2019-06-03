@@ -5,7 +5,6 @@ from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
 from django.core.files import File
 from django.db import transaction
-from django.db.models import Q
 from django.http import FileResponse
 from django.utils import timezone
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
@@ -1095,22 +1094,37 @@ class GetShops(APIView):
     permission_classes = []
     authentication_classes = []
 
-    def get(self, request) -> Response:
+    def post(self, request) -> Response:
         """
         Gets all shops.
         @param request: Unused.
         @return: Response having all shops.
         """
-        shops = Shop.objects.all()
+        shops = None
+        if 'shop_kind' in request.data:
+            shops = Shop.objects.filter(shop_kind_id = request.data['shop_kind'])
+        if 'name' in request.data:
+            if shops:
+                shops = shops.filter(name__contains = request.data['name'])
+            else:
+                shops = Shop.objects.filter(name__contains = request.data['name'])
+        if not shops and 'shop_kind' not in request.data and 'name' not in request.data:
+            shops = Shop.objects.all()
         data = []
         for shop in shops:
             serializer = ShopSerializer(shop)
             data.append(serializer.data)
-        return Response({
-            'result': True,
-            'message': 'فروشگاه ها',
-            'shops': data
-        })
+        if data:
+            return Response({
+                'result': True,
+                'message': 'فروشگاه ها',
+                'shops': data
+            })
+        else:
+            return Response({
+                'result': False,
+                'message': 'فروشگاهی یافت نشد.'
+            })
 
 
 # noinspection PyMethodMayBeStatic
