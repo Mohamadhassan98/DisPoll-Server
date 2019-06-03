@@ -1199,7 +1199,7 @@ class GetShopById(APIView):
                 'message': 'دسترسی رد شد.'
             })
         shop_kind = ShopKind.objects.get(pk = shop.shop_kind_id)
-        serializer = ShopKindSerializer(shop)
+        serializer = ShopSerializer(shop)
         serializer.data.update({'shop_kind': shop_kind.name})
         return Response({
             'result': True,
