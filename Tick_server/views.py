@@ -470,7 +470,7 @@ class GetCities(APIView):
             data.append({'id': city.pk, 'name': city.name})
         return Response({
             'result': True,
-            'message': 'انواع فروشگاه',
+            'message': 'نام شهرها',
             'cities': data
         })
 
@@ -801,36 +801,47 @@ class SubmitPoll(APIView):
         poll = Poll.objects.get(id = request.data['poll_id'])
         if 'linear_scale_answer' in request.data:
             linear_poll = poll.linear_scale_poll
-            linear_scale_poll_ans = LinearScalePollAnswer.objects.get(poll = linear_poll)
+            linear_scale_poll_ans = LinearScalePollAnswer.objects.get(poll = linear_poll, customer = customer,
+                                                                      poll_answer__completed = False)
             linear_scale_poll_ans.answer = int(request.data['linear_scale_answer'])
             linear_scale_poll_ans.poll_answer.completed = True
+            linear_scale_poll_ans.poll_answer.save()
             linear_scale_poll_ans.save()
         elif 'short_answer_text' in request.data:
             short_poll = poll.short_answer_poll
-            short_answer_poll_ans = ShortAnswerPollAnswer.objects.get(poll = short_poll)
+            short_answer_poll_ans = ShortAnswerPollAnswer.objects.get(poll = short_poll, customer = customer,
+                                                                      poll_answer__completed = False)
             short_answer_poll_ans.answer_text = request.data['short_answer_text']
             short_answer_poll_ans.poll_answer.completed = True
+            short_answer_poll_ans.poll_answer.save()
             short_answer_poll_ans.save()
         elif 'paragraph_text' in request.data:
             paragraph_poll = poll.paragraph_poll
-            paragraph_poll_ans = ParagraphPollAnswer.objects.get(poll = paragraph_poll)
+            paragraph_poll_ans = ParagraphPollAnswer.objects.get(poll = paragraph_poll, customer = customer,
+                                                                 poll_answer__completed = False)
             paragraph_poll_ans.answer_text = request.data['paragraph_text']
             paragraph_poll_ans.poll_answer.completed = True
+            paragraph_poll_ans.poll_answer.save()
             paragraph_poll_ans.save()
         elif 'check_box_answer' in request.data:
             check_box_poll = poll.check_box_poll
-            check_box_poll_ans = CheckBoxPollAnswer.objects.get(check_box_poll = check_box_poll)
+            check_box_poll_ans = CheckBoxPollAnswer.objects.get(check_box_poll = check_box_poll, customer = customer,
+                                                                poll_answer__completed = False)
             answers = request.data['check_box_answer'][1:-1].split(',')
             for ans in answers:
                 check_box_poll_ans.options.add(check_box_poll.options.get(index = int(ans)))
             check_box_poll_ans.poll_answer.completed = True
+            check_box_poll_ans.poll_answer.save()
             check_box_poll_ans.save()
         else:
             multiple_choice_poll = poll.multiple_choice_poll
-            multiple_choice_poll_ans = MultipleChoiceAnswer.objects.get(multiple_choice = multiple_choice_poll)
+            multiple_choice_poll_ans = MultipleChoiceAnswer.objects.get(multiple_choice = multiple_choice_poll,
+                                                                        customer = customer,
+                                                                        poll_answer__completed = False)
             index = int(request.data['multiple_choice_answer'])
             multiple_choice_poll_ans.option = multiple_choice_poll.options.get(index = index)
             multiple_choice_poll_ans.poll_answer.completed = True
+            multiple_choice_poll_ans.poll_answer.save()
             multiple_choice_poll_ans.save()
         shop = Shop.objects.get(id = poll.shop.id)
         my_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answers__customer = customer,
@@ -871,6 +882,8 @@ class SubmitPoll(APIView):
                 'result': False,
                 'message': 'تخفیفی برای این فروشگاه یافت نشد.'
             })
+        print('possible discounts:')
+        print(my_discounts)
         import random
         index = random.randint(0, len(my_discounts) - 1)
         product = my_discounts[index]
