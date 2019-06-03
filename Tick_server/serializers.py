@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, \
     Shop, CandidateProduct, ShopKind, City, CheckBoxPoll, CheckBoxOption, \
-    ParagraphPoll, LinearScalePoll, MultipleChoicePoll, MultipleChoiceOption, ShortAnswerPoll
+    ParagraphPoll, LinearScalePoll, MultipleChoicePoll, MultipleChoiceOption, ShortAnswerPoll, Advertisement
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -59,6 +59,19 @@ class SalesmanSerializer(serializers.ModelSerializer):
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.save()
         return instance
+
+
+class AdvertisementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Advertisement
+        fields = '__all__'
+
+
+class GetAdvertisementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Advertisement
+        fields = '__all__'
+        depth = 1
 
 
 class DiscountSerializer(serializers.ModelSerializer):

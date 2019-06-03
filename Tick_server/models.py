@@ -241,3 +241,12 @@ class Code4DigitSalesman(models.Model):
     email = models.EmailField()
     code = models.CharField(max_length = 4)
     password = models.CharField(max_length = 50)
+
+
+def upload_advertisement_to_path(instance, filename):
+    return 'Advertisement/' + str(instance.shop.id) + '.jpg'
+
+
+class Advertisement(models.Model):
+    picture = models.ImageField(upload_to = upload_advertisement_to_path)
+    shop = models.OneToOneField(Shop, on_delete = models.CASCADE, related_name = 'advertisement')
