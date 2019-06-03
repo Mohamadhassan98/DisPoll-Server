@@ -38,3 +38,7 @@ customer_login_successful = {
     'result': True,
     'message': 'ورود با موفقیت انجام شد.'
 }
+access_denied = {
+    'result': False,
+    'message': 'دسترسی رد شد.'
+}

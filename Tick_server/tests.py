@@ -11,11 +11,6 @@ class CustomerCredentialTest(APITransactionTestCase):
         self.phone_number = '09130172688'
         self.code = '1111'
 
-    # def test_scenario(self):
-    #     user = CustomUser.objects.create_superuser(username = 'admin', email = 'emohamadhassan@gmail.com',
-    #                                                password = 'admin')
-    #     print(Token.objects.create(user = user, key = 'd225d74e7447c5dc66e2845fdd23d0b02be3ba4f').key)
-
     def __signup_first__(self):
         response = self.client.post('/signup-customer/phone-auth/', {
             'phone_number': self.phone_number
