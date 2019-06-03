@@ -182,8 +182,12 @@ class CustomerCredentialTest(APITransactionTestCase):
         self.assertEqual(response.data, customer_code_resend_failed)
 
     def test_unit_login(self):
-        UserSerializer(data = self.user_data)
-        Customer
+        data = self.user_data.copy()
+        data.update({'user_type': 'CU'})
+        serializer = UserSerializer(data = data)
+        serializer.is_valid()
+        user = serializer.save()
+        Customer.objects.create(user = user)
         response = self.client.post('/login-customer/', {
             'phone_number': '09130172688',
             'password': '123456'
