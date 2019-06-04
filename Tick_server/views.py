@@ -1321,12 +1321,16 @@ class GetAds(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-class InActiveDiscount(APIView):
+class ApplyDiscount(APIView):
     def post(self, request):
-        discount = Discount.objects.get(id = request.data['discount_id'])
+        discount = Discount.objects.filter(candidate_product__shop__salesman__user = request.user,
+                                           pk = request.data['discount_id'])
+        if discount.count() == 0:
+            return Response(access_denied)
+        discount = discount[0]
         discount.active = False
         discount.save()
         return Response({
-            'result': 'True',
+            'result': True,
             'message': 'تخفیف اعمال شد.'
         })
