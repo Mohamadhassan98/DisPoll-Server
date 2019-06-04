@@ -236,7 +236,7 @@ class Code4DigitSalesman(models.Model):
 
 # noinspection PyUnusedLocal
 def upload_advertisement_to_path(instance, filename):
-    return 'Advertisement/AD_' + str(instance.shop.id) + '.jpg'
+    return 'Advertisement/' + 'advertisement_' + str(instance.shop.id) + '.jpg'
 
 
 class Advertisement(models.Model):
