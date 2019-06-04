@@ -234,8 +234,9 @@ class Code4DigitSalesman(models.Model):
     password = models.CharField(max_length = 50)
 
 
+# noinspection PyUnusedLocal
 def upload_advertisement_to_path(instance, filename):
-    return 'Advertisement/' + str(instance.shop.id) + '.jpg'
+    return 'Advertisement/AD_' + str(instance.shop.id) + '.jpg'
 
 
 class Advertisement(models.Model):

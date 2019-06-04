@@ -1,17 +1,10 @@
 import string
-from typing import Union
 
 from django.contrib.auth import login
-from django.contrib.auth.views import LogoutView
-from django.core.files import File
 from django.db import transaction
-from django.http import FileResponse
+from django.db.models import Q
 from django.utils import timezone
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie
-from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -22,9 +15,6 @@ from Tick_server.serializers import *
 
 # noinspection PyMethodMayBeStatic
 class SignUpFirstCustomer(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Gets and saves new customers I{phone_number}
@@ -43,9 +33,6 @@ class SignUpFirstCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpSecondCustomer(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Gets phone number and code sent to user and checks if it's valid
@@ -64,9 +51,6 @@ class SignUpSecondCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class ResendCodeCustomer(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Gets phone number and sends a new code to that number
@@ -85,9 +69,6 @@ class ResendCodeCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpFinalCustomer(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Gets phone number and other information to sign up a user.
@@ -118,9 +99,6 @@ class SignUpFinalCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class LoginCustomer(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Gets phone number and login credentials of a user and tries to login that user
@@ -148,9 +126,6 @@ class LoginCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditCustomerProfile(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Authenticates the user, validates and changes the information he sends via I{request}.
@@ -261,9 +236,11 @@ class SignUpFinalSalesman(APIView):
                 serializer.is_valid(raise_exception = True)
                 serializer.save()
                 Code4DigitSalesman.objects.get(email = request.data['email']).delete()
+                token, _ = Token.objects.get_or_create(user = user)
                 return Response({
                     'result': True,
                     'message': 'ثبت‌نام با موفقیت انجام شد.',
+                    'token': token.key
                 })
         except serializers.ValidationError as e:
             print(e)
@@ -297,7 +274,6 @@ class LoginSalesman(APIView):
     permission_classes = []
     authentication_classes = []
 
-    @method_decorator(ensure_csrf_cookie)
     def post(self, request) -> Response:
         """
         Gets email or username and login credentials of a user and tries to login that user
@@ -324,30 +300,22 @@ class LoginSalesman(APIView):
         copy = serializer.data.copy()
         id_user = copy.pop('user')
         user = CustomUser.objects.get(id = id_user)
-        print(copy)
         shops = salesman[0].shops.all()
-
+        token, _ = Token.objects.get_or_create(user = user)
         shops_list = []
         for shop in shops:
             shops_list.append({'id': shop.id, 'name': shop.name})
         copy.update({'first_name': user.first_name, 'last_name': user.last_name, 'shops': shops_list})
-        response = Response({
+        return Response({
             'result': True,
             'message': 'ورود با موفقیت انجام شد.',
-            'salesman': copy
+            'salesman': copy,
+            'token': token.key
         })
-        response.set_cookie(key = 'csrftoken', value = '1234567890123456789234567')
-        print('before')
-        print(response.cookies)
-        print('before')
-        return response
 
 
 # noinspection PyMethodMayBeStatic
 class AddShop(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (SessionAuthentication,)
-
     def post(self, request) -> Response:
         """
         Adds a new shop.
@@ -379,9 +347,6 @@ class AddShop(APIView):
 
 # noinspection PyMethodMayBeStatic
 class AddDiscount(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (SessionAuthentication,)
-
     def post(self, request) -> Response:
         """
         Adds discount by number of count.
@@ -419,9 +384,6 @@ class AddDiscount(APIView):
 
 # noinspection PyMethodMayBeStatic
 class ActiveDiscountListView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Gets phone number, page and offset and retrieve active discounts list of that customer
@@ -450,9 +412,6 @@ class ActiveDiscountListView(APIView):
 
 # noinspection PyMethodMayBeStatic
 class InactiveDiscountListView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Gets phone number, page and offset and retrieve inactive discounts list of that customer
@@ -526,9 +485,6 @@ class GetShopKinds(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditSalesmanProfileView(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (SessionAuthentication,)
-
     @transaction.atomic
     def post(self, request) -> Response:
         """
@@ -536,7 +492,11 @@ class EditSalesmanProfileView(APIView):
         @param request: Containing information wanted to edit.
         @return: I{Response} showing whether information updated or not.
         """
-        salesman = Salesman.objects.get(user__email = request.data['email'])
+
+        salesman = Salesman.objects.filter(user__email = request.data['email'], user = request.user)
+        if salesman.count() == 0:
+            return Response(access_denied)
+        salesman = salesman[0]
         if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
             if not salesman.check_password(old_password[0]):
@@ -565,65 +525,62 @@ class EditSalesmanProfileView(APIView):
             })
 
 
+# # noinspection PyMethodMayBeStatic
+# class GetSalesmanAvatar(APIView):
+#     def get(self, request) -> FileResponse:
+#         """
+#         Gets the I{avatar} of salesman.
+#         @param request: containing authenticated user object.
+#         @return: FileResponse containing salesman's I{avatar}
+#         """
+#         file = File(open('new-temp/' + str(request.user.salesman.avatar), 'rb'))
+#         return FileResponse(file)
+#
+#
 # noinspection PyMethodMayBeStatic
-class GetSalesmanAvatar(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (SessionAuthentication,)
-
-    def get(self, request) -> FileResponse:
-        """
-        Gets the I{avatar} of salesman.
-        @param request: containing authenticated user object.
-        @return: FileResponse containing salesman's I{avatar}
-        """
-        file = File(open('new-temp/' + str(request.user.salesman.avatar), 'rb'))
-        return FileResponse(file)
-
-
+# class GetShopPicture(APIView):
+#     permission_classes = (IsAuthenticated,)
+#     authentication_classes = (SessionAuthentication,)
+#
+#     def post(self, request) -> Union[Response, FileResponse]:
+#         """
+#         Gets the I{picture} of shop.
+#         @param request: containing shop's I{pk}.
+#         @return: FileResponse containing shop's I{picture} or Response if access is denied.
+#         """
+#         shop = Shop.objects.get(pk = request.data['shop'])
+#         shops = request.user.salesman.shops
+#         if shops.filter(pk = shop.pk).count() == 0:
+#             return Response({
+#                 'result': False,
+#                 'message': 'دسترسی رد شد.'
+#             })
+#         file = File(open('new-temp/' + str(shop.picture)), 'rb')
+#         return FileResponse(file)
+#
+#
 # noinspection PyMethodMayBeStatic
-class GetShopPicture(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (SessionAuthentication,)
-
-    def post(self, request) -> Union[Response, FileResponse]:
-        """
-        Gets the I{picture} of shop.
-        @param request: containing shop's I{pk}.
-        @return: FileResponse containing shop's I{picture} or Response if access is denied.
-        """
-        shop = Shop.objects.get(pk = request.data['shop'])
-        shops = request.user.salesman.shops
-        if shops.filter(pk = shop.pk).count() == 0:
-            return Response({
-                'result': False,
-                'message': 'دسترسی رد شد.'
-            })
-        file = File(open('new-temp/' + str(shop.picture)), 'rb')
-        return FileResponse(file)
-
-
-# noinspection PyMethodMayBeStatic
-class GetShopBusinessLicense(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (SessionAuthentication,)
-
-    def post(self, request) -> Union[Response, FileResponse]:
-        """
-        Gets the I{business_license} of shop.
-        @param request: containing shop's I{pk}.
-        @return: FileResponse containing shop's I{business_license} or Response if access is denied.
-        """
-        shop = Shop.objects.get(pk = request.data['shop'])
-        shops = request.user.salesman.shops
-        if shops.filter(pk = shop.pk).count() == 0:
-            return Response({
-                'result': False,
-                'message': 'دسترسی رد شد.'
-            })
-        file = File(open('new-temp/' + str(shop.business_license)), 'rb')
-        return FileResponse(file)
-
-
+# class GetShopBusinessLicense(APIView):
+#     permission_classes = (IsAuthenticated,)
+#     authentication_classes = (SessionAuthentication,)
+#
+#     def post(self, request) -> Union[Response, FileResponse]:
+#         """
+#         Gets the I{business_license} of shop.
+#         @param request: containing shop's I{pk}.
+#         @return: FileResponse containing shop's I{business_license} or Response if access is denied.
+#         """
+#         shop = Shop.objects.get(pk = request.data['shop'])
+#         shops = request.user.salesman.shops
+#         if shops.filter(pk = shop.pk).count() == 0:
+#             return Response({
+#                 'result': False,
+#                 'message': 'دسترسی رد شد.'
+#             })
+#         file = File(open('new-temp/' + str(shop.business_license)), 'rb')
+#         return FileResponse(file)
+#
+#
 # # TODO
 # class NotCompletedPollList(APIView):
 #     def post(self, request, Format = None):
@@ -649,9 +606,6 @@ class GetShopBusinessLicense(APIView):
 
 # noinspection PyMethodMayBeStatic
 class AddPoll(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (SessionAuthentication,)
-
     @transaction.atomic
     def post(self, request) -> Response:
         """
@@ -808,9 +762,6 @@ class AddPoll(APIView):
 
 # noinspection DjangoOrm, PyMethodMayBeStatic
 class SubmitPoll(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Submits a poll and gives a discount to customer.
@@ -927,11 +878,8 @@ class SubmitPoll(APIView):
         })
 
 
-# noinspection DjangoOrm, PyMethodMayBeStatic
+# noinspection PyMethodMayBeStatic
 class MyPolls(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Gives the incomplete polls to customer.
@@ -993,9 +941,6 @@ class MyPolls(APIView):
 
 # noinspection PyMethodMayBeStatic
 class PollToCustomer(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (SessionAuthentication,)
-
     def post(self, request) -> Response:
         """
         Assigns a poll to customer.
@@ -1097,9 +1042,6 @@ class PollToCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditShop(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (SessionAuthentication,)
-
     def post(self, request) -> Response:
         """
         Edits a shop.
@@ -1128,11 +1070,8 @@ class EditShop(APIView):
             })
 
 
-# noinspection PyUnusedLocal, PyMethodMayBeStatic, PyUnboundLocalVariable
+# noinspection PyMethodMayBeStatic, PyUnboundLocalVariable
 class GetShops(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request) -> Response:
         """
         Gets all shops.
@@ -1181,32 +1120,44 @@ class GetShops(APIView):
 
 # noinspection PyMethodMayBeStatic
 class LogoutViewCustomer(APIView):
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
     def post(self, request):
         """
         Logs a customer out.
         @param request: Customer to be logged out.
         @return: Always True.
         """
-        token = Token.objects.get(user = request.user)
-        token.delete()
+        if request.user.is_superuser or request.user.user_type == 'SM':
+            return Response(access_denied)
+        token = Token.objects.filter(user = request.user)
+        if token.count() != 0:
+            token.delete()
         return Response({
             'result': True,
             'message': 'با موفقیت خارج شد.'
         })
 
 
-class LogoutViewSalesman(LogoutView):
-    authentication_classes = (SessionAuthentication,)
+# noinspection PyMethodMayBeStatic
+class LogoutViewSalesman(APIView):
+    def post(self, request):
+        """
+        Logs a Salesman out.
+        @param request: Salesman to be logged out.
+        @return: Always True.
+        """
+        if request.user.is_superuser or request.user.user_type == 'CU':
+            return Response(access_denied)
+        token = Token.objects.filter(user = request.user)
+        if token.count() != 0:
+            token.delete()
+        return Response({
+            'result': True,
+            'message': 'با موفقیت خارج شد.'
+        })
 
 
 # noinspection PyMethodMayBeStatic
 class GetShopById(APIView):
-    authentication_classes = (SessionAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
     def post(self, request) -> Response:
         """
         Gives shop information.
@@ -1230,18 +1181,7 @@ class GetShopById(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-class InActiveDiscount(APIView):
-    def post(self, request):
-        discount = Discount.objects.get(id = request.data['discount_id'])
-        discount.active = False
-        discount.save()
-
-
-# noinspection PyMethodMayBeStatic
 class Statistics(APIView):
-    authentication_classes = (SessionAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
     def post(self, request):
         salesman = request.user.salesman
         shops = Shop.objects.filter(salesman = salesman)
@@ -1281,10 +1221,11 @@ class Statistics(APIView):
             for answer in linear_scale_answers:
                 total_submissions += 1
                 possible_answers[answer.answer_text] += 1
-            data = {'result': True,
-                    'message': 'جواب های نظرسنجی',
-                    'total_submission': total_submissions
-                    }
+            data = {
+                'result': True,
+                'message': 'جواب های نظرسنجی',
+                'total_submission': total_submissions
+            }
             index = 1
             for key, value in possible_answers.items():
                 tmp = 'option_' + str(index)
@@ -1339,10 +1280,10 @@ class Statistics(APIView):
 
 # noinspection PyMethodMayBeStatic
 class Advertise(APIView):
-    authentication_classes = (SessionAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
     def post(self, request):
+        shop = Shop.objects.filter(pk = request.data['shop'], salesman__user = request.user)
+        if shop.count() == 0:
+            return Response(access_denied)
         serializer = AdvertisementSerializer(request.data)
         if not serializer.is_valid():
             print(serializer.errors)
@@ -1360,12 +1301,9 @@ class Advertise(APIView):
 
 # noinspection PyMethodMayBeStatic
 class GetAds(APIView):
-    permission_classes = (IsAuthenticated,)
-    authentication_classes = (TokenAuthentication,)
-
     def post(self, request):
         salesman = request.user.salesman
-        if salesman.shops.filter(id = request.data['shop']).count() == 0:
+        if salesman.shops.filter(pk = request.data['shop']).count() == 0:
             return Response(access_denied)
         advertisements = Advertisement.objects.all()
         ads = []
