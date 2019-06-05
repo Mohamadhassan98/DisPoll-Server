@@ -8,12 +8,35 @@ from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, \
     ParagraphPoll, LinearScalePoll, MultipleChoicePoll, MultipleChoiceOption, ShortAnswerPoll, Advertisement
 
 
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = '__all__'
+
+        def update(self, instance: CustomUser, validated_data):
+            instance.birth_date = validated_data.get('birth_date', instance.birth_date)
+            instance.gender = validated_data.get('gender', instance.gender)
+            instance.location = validated_data.get('location', instance.location)
+            instance.city = validated_data.get('city', instance.city)
+            instance.first_name = validated_data.get('first_name', instance.first_name)
+            instance.last_name = validated_data.get('last_name', instance.last_name)
+            if instance.user_type == 'CU':
+                instance.email = validated_data.get('email', instance.email)
+            elif instance.user_type == 'SM':
+                instance.phone_number = validated_data.get('phone_number', instance.phone_number)
+            if 'password' in validated_data:
+                instance.set_password(validated_data['password'])
+            instance.save()
+            return instance
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = '__all__'
 
     def validate(self, attrs):
+        print(attrs)
         if attrs['user_type'] == 'CU':
             if CustomUser.objects.filter(phone_number = attrs['phone_number'], user_type = 'CU').count() != 0:
                 raise serializers.ValidationError(

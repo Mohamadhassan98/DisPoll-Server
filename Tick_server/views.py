@@ -146,7 +146,7 @@ class EditCustomerProfile(APIView):
                     'result': False,
                     'message': 'رمز قبلی نادرست وارد شده است.'
                 })
-        serializer = UserSerializer(customer.user, data = request.data, partial = True)
+        serializer = UserUpdateSerializer(customer.user, data = copy, partial = True)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
