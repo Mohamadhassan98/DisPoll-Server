@@ -15,6 +15,7 @@ from Tick_server.serializers import *
 
 # noinspection PyMethodMayBeStatic
 class SignUpFirstCustomer(APIView):
+    # @FullyTested
     def post(self, request) -> Response:
         """
         Gets and saves new customers I{phone_number}
@@ -33,6 +34,7 @@ class SignUpFirstCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpSecondCustomer(APIView):
+    # @FullyTested
     def post(self, request) -> Response:
         """
         Gets phone number and code sent to user and checks if it's valid
@@ -51,6 +53,7 @@ class SignUpSecondCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class ResendCodeCustomer(APIView):
+    # @FullyTested
     def post(self, request) -> Response:
         """
         Gets phone number and sends a new code to that number
@@ -69,6 +72,7 @@ class ResendCodeCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpFinalCustomer(APIView):
+    # @FullyTested
     def post(self, request) -> Response:
         """
         Gets phone number and other information to sign up a user.
@@ -99,6 +103,7 @@ class SignUpFinalCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class LoginCustomer(APIView):
+    # @FullyTested
     def post(self, request) -> Response:
         """
         Gets phone number and login credentials of a user and tries to login that user
@@ -118,8 +123,11 @@ class LoginCustomer(APIView):
         login(request, customer[0].user)
         serializer = UserSerializer(customer[0].user)
         token, _ = Token.objects.get_or_create(user = customer[0].user)
+        copy = serializer.data.copy()
+        copy.pop('password')
+        copy.pop('user_type')
         result = customer_login_successful.copy()
-        result.update({'customer_info': serializer.data})
+        result.update({'customer_info': copy})
         result.update({'token': token.key})
         return Response(result)
 
@@ -133,7 +141,7 @@ class EditCustomerProfile(APIView):
         @return: I{Response} showing whether information updated or not.
         """
         customer = Customer.objects.filter(user__phone_number = request.data['phone_number'],
-                                           user__username = request.user)
+                                           user__username = request.user.username)
         _mutable = request.data._mutable
         request.data._mutable = True
         if customer.count() == 0:
@@ -146,7 +154,7 @@ class EditCustomerProfile(APIView):
                     'result': False,
                     'message': 'رمز قبلی نادرست وارد شده است.'
                 })
-        serializer = UserUpdateSerializer(customer.user, data = copy, partial = True)
+        serializer = UserUpdateSerializer(customer.user, data = request.data, partial = True)
         if not serializer.is_valid():
             print(serializer.errors)
             return Response({
@@ -505,7 +513,7 @@ class EditSalesmanProfileView(APIView):
                 })
         try:
             with transaction.atomic():
-                serializer = UserSerializer(salesman.user, request.data, partial = True)
+                serializer = UserUpdateSerializer(salesman.user, request.data, partial = True)
                 serializer.is_valid(raise_exception = True)
                 serializer.save()
                 if 'avatar' in request.data:

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
+    'drf_autodocs',
 ]
 
 REST_FRAMEWORK = {
@@ -128,3 +129,4 @@ AUTH_USER_MODEL = 'Tick_server.CustomUser'
 LOGIN_URL = 'login'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'new-temp')
 MEDIA_URL = '/new-temp/'
+AUTODOCS_ENDPOINT_NAMES = "view"

@@ -11,51 +11,10 @@ from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, \
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = '__all__'
-
-        def update(self, instance: CustomUser, validated_data):
-            instance.birth_date = validated_data.get('birth_date', instance.birth_date)
-            instance.gender = validated_data.get('gender', instance.gender)
-            instance.location = validated_data.get('location', instance.location)
-            instance.city = validated_data.get('city', instance.city)
-            instance.first_name = validated_data.get('first_name', instance.first_name)
-            instance.last_name = validated_data.get('last_name', instance.last_name)
-            if instance.user_type == 'CU':
-                instance.email = validated_data.get('email', instance.email)
-            elif instance.user_type == 'SM':
-                instance.phone_number = validated_data.get('phone_number', instance.phone_number)
-            if 'password' in validated_data:
-                instance.set_password(validated_data['password'])
-            instance.save()
-            return instance
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomUser
-        fields = '__all__'
-
-    def validate(self, attrs):
-        print(attrs)
-        if attrs['user_type'] == 'CU':
-            if CustomUser.objects.filter(phone_number = attrs['phone_number'], user_type = 'CU').count() != 0:
-                raise serializers.ValidationError(
-                    {'phone_number': [
-                        ErrorDetail(string = 'A user with that phone_number already exists.', code = 'unique')]})
-        if attrs['user_type'] == 'SM':
-            if CustomUser.objects.filter(email = attrs['email'], user_type = 'SM').count() != 0:
-                raise serializers.ValidationError(
-                    {'email': [ErrorDetail(string = 'A user with that email already exists.', code = 'unique')]})
-        return attrs
-
-    def create(self, validated_data):
-        username = validated_data.pop('username')
-        password = validated_data.pop('password')
-        validated_data.pop('groups')
-        validated_data.pop('user_permissions')
-        validated_data.update({'is_active': True})
-        CustomUser.objects.create_user(username = username, password = password, **validated_data)
-        return CustomUser.objects.get(username = username)
+        fields = (
+            'username', 'email', 'password', 'user_type', 'birth_date', 'gender', 'location', 'phone_number', 'city',
+            'first_name', 'last_name'
+        )
 
     def update(self, instance: CustomUser, validated_data):
         instance.birth_date = validated_data.get('birth_date', instance.birth_date)
@@ -72,9 +31,34 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(validated_data['password'])
         instance.save()
         return instance
-        # new_instance = super().update(instance, validated_data)
-        # new_instance.save()
-        # return new_instance
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = (
+            'username', 'email', 'password', 'user_type', 'birth_date', 'gender', 'location', 'phone_number', 'city',
+            'first_name', 'last_name'
+        )
+
+    def validate(self, attrs):
+        if attrs['user_type'] == 'CU':
+            if CustomUser.objects.filter(phone_number = attrs['phone_number'], user_type = 'CU').count() != 0:
+                raise serializers.ValidationError(
+                    {'phone_number': [
+                        ErrorDetail(string = 'A user with that phone_number already exists.', code = 'unique')]})
+        if attrs['user_type'] == 'SM':
+            if CustomUser.objects.filter(email = attrs['email'], user_type = 'SM').count() != 0:
+                raise serializers.ValidationError(
+                    {'email': [ErrorDetail(string = 'A user with that email already exists.', code = 'unique')]})
+        return attrs
+
+    def create(self, validated_data):
+        username = validated_data.pop('username')
+        password = validated_data.pop('password')
+        validated_data.update({'is_active': True})
+        CustomUser.objects.create_user(username = username, password = password, **validated_data)
+        return CustomUser.objects.get(username = username)
 
 
 class CustomerSerializer(serializers.ModelSerializer):

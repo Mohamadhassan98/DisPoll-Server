@@ -1,5 +1,9 @@
+from django.conf.urls import url
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import path, include
 
+from Tick_server.views import *
 from tick_project import settings
 
 urls_ = """tick_project URL Configuration
@@ -17,12 +21,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path
-
-from Tick_server.views import *
 
 urlpatterns = [
+    url(r'^', include('drf_autodocs.urls')),
     path('admin/', admin.site.urls),
     path('signup-customer/phone-auth/', SignUpFirstCustomer.as_view()),
     path('signup-customer/confirm-phone/', SignUpSecondCustomer.as_view()),
@@ -55,6 +56,7 @@ urlpatterns = [
     path('add-advertisement/', Advertise.as_view()),
     path('get-ads/', GetAds.as_view()),
     path('inactive-discount/', ApplyDiscount.as_view()),
-    path('statistics/', Statistics.as_view())
+    path('statistics/', Statistics.as_view()),
+    # url(r'^docs/', include_docs_urls(title = 'My API title'))
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

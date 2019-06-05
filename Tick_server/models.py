@@ -15,7 +15,7 @@ class CustomUser(AbstractUser):
         ('CU', 'Customer'),
         ('SM', 'Salesman')
     )
-    user_type = models.CharField(max_length = 2, choices = TYPES)
+    user_type = models.CharField(max_length = 2, choices = TYPES, default = 'SU')
     birth_date = models.DateField(null = True, blank = True)
     GENDER = (
         ('m', 'Male'),
