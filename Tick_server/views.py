@@ -5,16 +5,18 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from Tick_server.models import *
 from Tick_server.responses import *
 from Tick_server.serializers import *
 
 
 # noinspection PyMethodMayBeStatic
 class SignUpFirstCustomer(APIView):
+    serializer_class = Code4DigitSerializer
+
     # @FullyTested
     def post(self, request) -> Response:
         """
@@ -72,6 +74,9 @@ class ResendCodeCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpFinalCustomer(APIView):
+    serializer_class = UserSerializer
+    queryset = CustomUser.objects.all()
+
     # @FullyTested
     def post(self, request) -> Response:
         """
@@ -171,7 +176,7 @@ class EditCustomerProfile(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpFirstSalesman(APIView):
-    permission_classes = []
+    permission_classes = (AllowAny,)
     authentication_classes = []
 
     def post(self, request) -> Response:
@@ -197,7 +202,7 @@ class SignUpFirstSalesman(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpSecondSalesman(APIView):
-    permission_classes = []
+    permission_classes = (AllowAny,)
     authentication_classes = []
 
     def post(self, request) -> Response:
@@ -222,7 +227,7 @@ class SignUpSecondSalesman(APIView):
 
 # noinspection PyMethodMayBeStatic
 class SignUpFinalSalesman(APIView):
-    permission_classes = []
+    permission_classes = (AllowAny,)
     authentication_classes = []
 
     @transaction.atomic
@@ -260,7 +265,7 @@ class SignUpFinalSalesman(APIView):
 
 # noinspection PyMethodMayBeStatic
 class ResendCodeSalesman(APIView):
-    permission_classes = []
+    permission_classes = (AllowAny,)
     authentication_classes = []
 
     def post(self, request) -> Response:
@@ -279,7 +284,7 @@ class ResendCodeSalesman(APIView):
 
 # noinspection PyMethodMayBeStatic
 class LoginSalesman(APIView):
-    permission_classes = []
+    permission_classes = (AllowAny,)
     authentication_classes = []
 
     def post(self, request) -> Response:
@@ -448,7 +453,7 @@ class InactiveDiscountListView(APIView):
 
 # noinspection PyMethodMayBeStatic, PyUnusedLocal
 class GetCities(APIView):
-    permission_classes = []
+    permission_classes = (AllowAny,)
     authentication_classes = []
 
     def get(self, request) -> Response:
@@ -470,7 +475,7 @@ class GetCities(APIView):
 
 # noinspection PyMethodMayBeStatic, PyUnusedLocal
 class GetShopKinds(APIView):
-    permission_classes = []
+    permission_classes = (AllowAny,)
     authentication_classes = []
 
     def get(self, request) -> Response:
@@ -1290,7 +1295,7 @@ class Statistics(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-class Advertise(APIView):
+class AddAdvertise(APIView):
     def post(self, request):
         shop = Shop.objects.filter(pk = request.data['shop'], salesman__user = request.user)
         if shop.count() == 0:

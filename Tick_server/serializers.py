@@ -3,9 +3,7 @@ import os
 from rest_framework import serializers
 from rest_framework.exceptions import ErrorDetail
 
-from Tick_server.models import Customer, Discount, Poll, CustomUser, Salesman, \
-    Shop, CandidateProduct, ShopKind, City, CheckBoxPoll, CheckBoxOption, \
-    ParagraphPoll, LinearScalePoll, MultipleChoicePoll, MultipleChoiceOption, ShortAnswerPoll, Advertisement
+from Tick_server.models import *
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
@@ -193,3 +191,9 @@ class GetShopSerializer(serializers.ModelSerializer):
         model = Shop
         fields = '__all__'
         depth = 1
+
+
+class Code4DigitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Code4Digit
+        fields = '__all__'

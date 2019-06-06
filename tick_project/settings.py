@@ -129,4 +129,4 @@ AUTH_USER_MODEL = 'Tick_server.CustomUser'
 LOGIN_URL = 'login'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'new-temp')
 MEDIA_URL = '/new-temp/'
-AUTODOCS_ENDPOINT_NAMES = "view"
+# AUTODOCS_ENDPOINT_NAMES = "view"
