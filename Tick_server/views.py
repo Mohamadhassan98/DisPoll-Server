@@ -26,6 +26,8 @@ class SignUpFirstCustomer(APIView):
         """
         if not request.user.is_superuser:
             return Response(access_denied)
+        if 'phone_number' not in request.data:
+            return Response(insufficient_data)
         phone = request.data['phone_number']
         if Customer.objects.filter(user__phone_number = phone).count() == 1:
             return Response(customer_already_exists)
@@ -45,12 +47,14 @@ class SignUpSecondCustomer(APIView):
         """
         if not request.user.is_superuser:
             return Response(access_denied)
+        if 'phone_number' not in request.data or 'code' not in request.data:
+            return Response(insufficient_data)
         phone = request.data['phone_number']
         code = request.data['code']
         if Code4Digit.objects.filter(phone_number = phone, code = code).count() == 1:
-            return Response(customer_signup_successful)
+            return Response(signup_successful)
         else:
-            return Response(customer_code_incorrect)
+            return Response(code_incorrect)
 
 
 # noinspection PyMethodMayBeStatic
@@ -64,12 +68,14 @@ class ResendCodeCustomer(APIView):
         """
         if not request.user.is_superuser:
             return Response(access_denied)
+        if 'phone_number' not in request.data:
+            return Response(insufficient_data)
         phone = request.data['phone_number']
         codes = Code4Digit.objects.filter(phone_number = phone)
         if codes.count() == 0:
             return Response(customer_code_resend_failed)
         codes.update(code = '1111')
-        return Response(customer_code_resent)
+        return Response(code_resent)
 
 
 # noinspection PyMethodMayBeStatic
@@ -86,22 +92,24 @@ class SignUpFinalCustomer(APIView):
         """
         if not request.user.is_superuser:
             return Response(access_denied)
+        if 'phone_number' not in request.data:
+            return Response(insufficient_data)
         copy = request.data.copy()
         copy.update({'user_type': 'CU'})
         serializer = UserSerializer(data = copy)
         code = Code4Digit.objects.filter(phone_number = copy['phone_number'])
         if not serializer.is_valid():
             print(serializer.errors)
-            return Response(customer_signup_failed)
+            return Response(signup_failed)
         if code.count() == 0:
             print('invalid phone_number specified')
-            return Response(customer_signup_failed)
+            return Response(signup_failed)
         else:
             user = serializer.save()
             Customer.objects.create(user = user)
             token, _ = Token.objects.get_or_create(user = user)
             code[0].delete()
-            response = customer_signup_successful.copy()
+            response = signup_successful.copy()
             response.update({'token': token.key})
             return Response(response)
 
@@ -118,6 +126,8 @@ class LoginCustomer(APIView):
         """
         if not request.user.is_superuser:
             return Response(access_denied)
+        if 'phone_number' not in request.data or 'password' not in request.data:
+            return Response(insufficient_data)
         phone = request.data['phone_number']
         password = request.data['password']
         customer = Customer.objects.filter(user__phone_number = phone)
@@ -139,39 +149,33 @@ class LoginCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditCustomerProfile(APIView):
+    # @FullyTested
     def post(self, request) -> Response:
         """
         Authenticates the user, validates and changes the information he sends via I{request}.
         @param request: Containing information wanted to edit.
         @return: I{Response} showing whether information updated or not.
         """
+        if 'phone_number' not in request.data:
+            return Response(insufficient_data)
         customer = Customer.objects.filter(user__phone_number = request.data['phone_number'],
                                            user__username = request.user.username)
         _mutable = request.data._mutable
         request.data._mutable = True
-        if customer.count() == 0:
+        if customer.count() == 0 or request.user.is_superuser:
             return Response(access_denied)
         customer = customer[0]
         if 'old_password' in request.data:
             old_password = request.data.pop('old_password')
             if not customer.check_password(old_password[0]):
-                return Response({
-                    'result': False,
-                    'message': 'رمز قبلی نادرست وارد شده است.'
-                })
+                return Response(customer_wrong_old_password)
         serializer = UserUpdateSerializer(customer.user, data = request.data, partial = True)
         if not serializer.is_valid():
             print(serializer.errors)
-            return Response({
-                'result': False,
-                'message': 'ویرایش اطلاعات با خطا مواجه شد.'
-            })
+            return Response(customer_edit_profile_failed)
         else:
             serializer.save()
-            return Response({
-                'result': True,
-                'message': 'ویرایش اطلاعات با موفقیت انجام شد.',
-            })
+            return Response(customer_edit_profile_successful)
 
 
 # noinspection PyMethodMayBeStatic
@@ -185,19 +189,15 @@ class SignUpFirstSalesman(APIView):
         @param request: includes email and password
         @return: Response showing whether saving email and password was successful or not.
         """
+        if 'email' not in request.data or 'password' not in request.data:
+            return Response(insufficient_data)
         email = request.data['email']
         password = request.data['password']
         if Salesman.objects.filter(user__email = email).count() == 1:
-            return Response({
-                'result': False,
-                'message': 'کاربری با این ایمیل قبلاً ثبت‌نام کرده.',
-            })
+            return Response(salesman_already_exists)
         else:
             Code4DigitSalesman.objects.update_or_create(email = email, password = password, defaults = {'code': '1111'})
-            return Response({
-                'result': True,
-                'message': 'اطلاعات با موفقیت ذخیره شد.',
-            })
+            return Response(email_saved_successfully)
 
 
 # noinspection PyMethodMayBeStatic
@@ -211,18 +211,14 @@ class SignUpSecondSalesman(APIView):
         @param request: includes email and code
         @return: Response showing whether the code is valid and sign up is successful or not
         """
+        if 'email' not in request.data or 'code' not in request.data:
+            return Response(insufficient_data)
         email = request.data['email']
         code = request.data['code']
         if Code4DigitSalesman.objects.filter(email = email, code = code).count() == 1:
-            return Response({
-                'result': True,
-                'message': 'ثبت‌نام با موفقیت انجام شد.',
-            })
+            return Response(signup_successful)
         else:
-            return Response({
-                'result': False,
-                'message': 'کد وارد شده صحیح نیست. لطفاً دوباره امتحان کنید.',
-            })
+            return Response(code_incorrect)
 
 
 # noinspection PyMethodMayBeStatic
@@ -237,6 +233,8 @@ class SignUpFinalSalesman(APIView):
         @param request: includes email and all necessary information to create new user
         @return: Response showing whether sign up is successful or not
         """
+        if 'email' not in request.data:
+            return Response(insufficient_data)
         request.data._mutable = True
         request.data.update({'user_type': 'SM'})
         try:
@@ -250,17 +248,12 @@ class SignUpFinalSalesman(APIView):
                 serializer.save()
                 Code4DigitSalesman.objects.get(email = request.data['email']).delete()
                 token, _ = Token.objects.get_or_create(user = user)
-                return Response({
-                    'result': True,
-                    'message': 'ثبت‌نام با موفقیت انجام شد.',
-                    'token': token.key
-                })
+                result = signup_successful.copy()
+                result.update({'token': token.key})
+                return Response(result)
         except serializers.ValidationError as e:
             print(e)
-            return Response({
-                'result': False,
-                'message': 'ثبت‌نام با خطا مواجه شد.'
-            })
+            return Response(signup_failed)
 
 
 # noinspection PyMethodMayBeStatic
@@ -274,12 +267,11 @@ class ResendCodeSalesman(APIView):
         @param request: includes email only
         @return: Response always contains true
         """
+        if 'email' not in request.data:
+            return Response(insufficient_data)
         email = request.data['email']
         Code4DigitSalesman.objects.filter(email = email).update(code = '1111')
-        return Response({
-            'result': True,
-            'message': 'کد مجدداً ارسال شد.',
-        })
+        return Response(code_resent)
 
 
 # noinspection PyMethodMayBeStatic
@@ -325,6 +317,47 @@ class LoginSalesman(APIView):
             'salesman': copy,
             'token': token.key
         })
+
+
+# noinspection PyMethodMayBeStatic
+class EditSalesmanProfileView(APIView):
+    @transaction.atomic
+    def post(self, request) -> Response:
+        """
+        Authenticates the user, validates and changes the information he sends via I{request}.
+        @param request: Containing information wanted to edit.
+        @return: I{Response} showing whether information updated or not.
+        """
+        salesman = Salesman.objects.filter(user__email = request.data['email'], user = request.user)
+        if salesman.count() == 0:
+            return Response(access_denied)
+        salesman = salesman[0]
+        if 'old_password' in request.data:
+            old_password = request.data.pop('old_password')
+            if not salesman.check_password(old_password[0]):
+                return Response({
+                    'result': False,
+                    'message': 'رمز وارد شده صحیح نیست.'
+                })
+        try:
+            with transaction.atomic():
+                serializer = UserUpdateSerializer(salesman.user, request.data, partial = True)
+                serializer.is_valid(raise_exception = True)
+                serializer.save()
+                if 'avatar' in request.data:
+                    serializer = SalesmanSerializer(salesman, request.data, partial = True)
+                    serializer.is_valid(raise_exception = True)
+                    serializer.save()
+                return Response({
+                    'result': True,
+                    'message': 'ویرایش اطلاعات با موفقیت انجام شد.'
+                })
+        except serializers.ValidationError as e:
+            print(e)
+            return Response({
+                'result': False,
+                'message': 'ویرایش اطلاعات با خطا مواجه شد.'
+            })
 
 
 # noinspection PyMethodMayBeStatic
@@ -494,47 +527,6 @@ class GetShopKinds(APIView):
             'message': 'نوع فروشگاه ها',
             'shop_kinds': data
         })
-
-
-# noinspection PyMethodMayBeStatic
-class EditSalesmanProfileView(APIView):
-    @transaction.atomic
-    def post(self, request) -> Response:
-        """
-        Authenticates the user, validates and changes the information he sends via I{request}.
-        @param request: Containing information wanted to edit.
-        @return: I{Response} showing whether information updated or not.
-        """
-        salesman = Salesman.objects.filter(user__email = request.data['email'], user = request.user)
-        if salesman.count() == 0:
-            return Response(access_denied)
-        salesman = salesman[0]
-        if 'old_password' in request.data:
-            old_password = request.data.pop('old_password')
-            if not salesman.check_password(old_password[0]):
-                return Response({
-                    'result': False,
-                    'message': 'رمز وارد شده صحیح نیست.'
-                })
-        try:
-            with transaction.atomic():
-                serializer = UserUpdateSerializer(salesman.user, request.data, partial = True)
-                serializer.is_valid(raise_exception = True)
-                serializer.save()
-                if 'avatar' in request.data:
-                    serializer = SalesmanSerializer(salesman, request.data, partial = True)
-                    serializer.is_valid(raise_exception = True)
-                    serializer.save()
-                return Response({
-                    'result': True,
-                    'message': 'ویرایش اطلاعات با موفقیت انجام شد.'
-                })
-        except serializers.ValidationError as e:
-            print(e)
-            return Response({
-                'result': False,
-                'message': 'ویرایش اطلاعات با خطا مواجه شد.'
-            })
 
 
 # # noinspection PyMethodMayBeStatic
