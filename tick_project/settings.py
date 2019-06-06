@@ -127,7 +127,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/silk/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'silk')
 AUTH_USER_MODEL = 'Tick_server.CustomUser'
 LOGIN_URL = 'login'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'new-temp')
