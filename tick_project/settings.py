@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'drf_autodocs',
+    'silk'
 ]
 
 REST_FRAMEWORK = {
@@ -57,6 +58,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'silk.middleware.SilkyMiddleware'
 ]
 
 ROOT_URLCONF = 'tick_project.urls'
@@ -125,6 +127,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = '/silk/'
 AUTH_USER_MODEL = 'Tick_server.CustomUser'
 LOGIN_URL = 'login'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'new-temp')

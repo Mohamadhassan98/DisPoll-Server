@@ -68,6 +68,7 @@ urlpatterns_salesman = [
 
 urlpatterns = [
     url(r'^', include('drf_autodocs.urls')),
+    url(r'^silk/', include('silk.urls', namespace = 'silk')),
     url('admin/', admin.site.urls),
     url('cities/', GetCities.as_view(), name = 'Get_all_cities'),
     url('shop-kinds/', GetShopKinds.as_view(), name = 'get_all_shop_kinds'),
