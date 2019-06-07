@@ -8,6 +8,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from silk.profiling.profiler import silk_profile
 
 from Tick_server.responses import *
 from Tick_server.serializers import *
@@ -489,6 +490,7 @@ class GetCities(APIView):
     permission_classes = (AllowAny,)
     authentication_classes = []
 
+    @silk_profile(name = 'View Blog Post')
     def get(self, request) -> Response:
         """
         Returns all cities.
