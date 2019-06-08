@@ -715,6 +715,7 @@ class AddPoll(APIView):
                     }
                     paragraph_serializer = ParagraphPollSerializer(data = data)
                     paragraph_serializer.is_valid(raise_exception = True)
+                    paragraph_serializer.save()
                     return Response({
                         'result': True,
                         'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
@@ -754,6 +755,7 @@ class AddPoll(APIView):
                     poll_serializer.save()
                     short_answer_serializer = ShortAnswerSerializer(data = request.data)
                     short_answer_serializer.is_valid(raise_exception = True)
+                    short_answer_serializer.save()
                     return Response({
                         'result': True,
                         'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
@@ -1220,9 +1222,11 @@ class Statistics(APIView):
             step = poll.linear_scale_poll.step
             count = poll.linear_scale_poll.choices_count
             possible_answers = {}
+            cnt = 0
             while count:
-                possible_answers[start + step * (count - 1)] = 0
+                possible_answers[start + step * cnt] = 0
                 count -= 1
+                cnt += 1
             linear_scale_answers = LinearScalePollAnswer.objects.filter(poll__poll = poll)
             for answer in linear_scale_answers:
                 total_submissions += 1
@@ -1312,9 +1316,6 @@ class AddAdvertise(APIView):
 # noinspection PyMethodMayBeStatic
 class GetAds(APIView):
     def post(self, request):
-        salesman = request.user.salesman
-        if salesman.shops.filter(pk = request.data['shop']).count() == 0:
-            return Response(access_denied)
         advertisements = Advertisement.objects.all()
         ads = []
         for ad in advertisements:
