@@ -19,6 +19,7 @@ class SignUpFirstCustomer(APIView):
     serializer_class = Code4DigitSerializer
 
     # @FullyTested
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets and saves new customers I{phone_number}
@@ -40,6 +41,7 @@ class SignUpFirstCustomer(APIView):
 # noinspection PyMethodMayBeStatic
 class SignUpSecondCustomer(APIView):
     # @FullyTested
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets phone number and code sent to user and checks if it's valid
@@ -61,6 +63,7 @@ class SignUpSecondCustomer(APIView):
 # noinspection PyMethodMayBeStatic
 class ResendCodeCustomer(APIView):
     # @FullyTested
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets phone number and sends a new code to that number
@@ -85,6 +88,7 @@ class SignUpFinalCustomer(APIView):
     queryset = CustomUser.objects.all()
 
     # @FullyTested
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets phone number and other information to sign up a user.
@@ -118,6 +122,7 @@ class SignUpFinalCustomer(APIView):
 # noinspection PyMethodMayBeStatic
 class LoginCustomer(APIView):
     # @FullyTested
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets phone number and login credentials of a user and tries to login that user
@@ -151,6 +156,7 @@ class LoginCustomer(APIView):
 # noinspection PyMethodMayBeStatic
 class EditCustomerProfile(APIView):
     # @FullyTested
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Authenticates the user, validates and changes the information he sends via I{request}.
@@ -184,6 +190,7 @@ class SignUpFirstSalesman(APIView):
     permission_classes = (AllowAny,)
     authentication_classes = []
 
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets and saves new salesman email and password
@@ -206,6 +213,7 @@ class SignUpSecondSalesman(APIView):
     permission_classes = (AllowAny,)
     authentication_classes = []
 
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets email and code sent to user and checks if it's valid
@@ -262,6 +270,7 @@ class ResendCodeSalesman(APIView):
     permission_classes = (AllowAny,)
     authentication_classes = []
 
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets email and sends a new code to that email
@@ -280,6 +289,7 @@ class LoginSalesman(APIView):
     permission_classes = (AllowAny,)
     authentication_classes = []
 
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets email or username and login credentials of a user and tries to login that user
@@ -323,6 +333,7 @@ class LoginSalesman(APIView):
 # noinspection PyMethodMayBeStatic
 class EditSalesmanProfileView(APIView):
     @transaction.atomic
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Authenticates the user, validates and changes the information he sends via I{request}.
@@ -363,6 +374,7 @@ class EditSalesmanProfileView(APIView):
 
 # noinspection PyMethodMayBeStatic
 class AddShop(APIView):
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Adds a new shop.
@@ -394,6 +406,7 @@ class AddShop(APIView):
 
 # noinspection PyMethodMayBeStatic
 class AddDiscount(APIView):
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Adds discount by number of count.
@@ -431,6 +444,7 @@ class AddDiscount(APIView):
 
 # noinspection PyMethodMayBeStatic
 class ActiveDiscountListView(APIView):
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets phone number, page and offset and retrieve active discounts list of that customer
@@ -459,6 +473,7 @@ class ActiveDiscountListView(APIView):
 
 # noinspection PyMethodMayBeStatic
 class InactiveDiscountListView(APIView):
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets phone number, page and offset and retrieve inactive discounts list of that customer
@@ -490,7 +505,7 @@ class GetCities(APIView):
     permission_classes = (AllowAny,)
     authentication_classes = []
 
-    @silk_profile(name = 'View Blog Post')
+    @silk_profile()
     def get(self, request) -> Response:
         """
         Returns all cities.
@@ -513,6 +528,7 @@ class GetShopKinds(APIView):
     permission_classes = (AllowAny,)
     authentication_classes = []
 
+    @silk_profile()
     def get(self, request) -> Response:
         """
         Returns ShopKind corresponding requested I{id}.
@@ -613,6 +629,7 @@ class GetShopKinds(APIView):
 # noinspection PyMethodMayBeStatic
 class AddPoll(APIView):
     @transaction.atomic
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Adds poll.
@@ -770,6 +787,7 @@ class AddPoll(APIView):
 
 # noinspection DjangoOrm, PyMethodMayBeStatic
 class SubmitPoll(APIView):
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Submits a poll and gives a discount to customer.
@@ -888,6 +906,7 @@ class SubmitPoll(APIView):
 
 # noinspection PyMethodMayBeStatic
 class MyPolls(APIView):
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gives the incomplete polls to customer.
@@ -949,6 +968,7 @@ class MyPolls(APIView):
 
 # noinspection PyMethodMayBeStatic
 class PollToCustomer(APIView):
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Assigns a poll to customer.
@@ -1050,6 +1070,7 @@ class PollToCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class EditShop(APIView):
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Edits a shop.
@@ -1080,6 +1101,7 @@ class EditShop(APIView):
 
 # noinspection PyMethodMayBeStatic, PyUnboundLocalVariable
 class GetShops(APIView):
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gets all shops.
@@ -1128,6 +1150,7 @@ class GetShops(APIView):
 
 # noinspection PyMethodMayBeStatic
 class LogoutViewCustomer(APIView):
+    @silk_profile()
     def post(self, request):
         """
         Logs a customer out.
@@ -1147,6 +1170,7 @@ class LogoutViewCustomer(APIView):
 
 # noinspection PyMethodMayBeStatic
 class LogoutViewSalesman(APIView):
+    @silk_profile()
     def post(self, request):
         """
         Logs a Salesman out.
@@ -1166,6 +1190,7 @@ class LogoutViewSalesman(APIView):
 
 # noinspection PyMethodMayBeStatic
 class GetShopById(APIView):
+    @silk_profile()
     def post(self, request) -> Response:
         """
         Gives shop information.
@@ -1190,6 +1215,7 @@ class GetShopById(APIView):
 
 # noinspection PyMethodMayBeStatic
 class Statistics(APIView):
+    @silk_profile()
     def post(self, request):
         salesman = request.user.salesman
         shops = Shop.objects.filter(salesman = salesman)
@@ -1294,6 +1320,7 @@ class Statistics(APIView):
 
 # noinspection PyMethodMayBeStatic
 class AddAdvertise(APIView):
+    @silk_profile()
     def post(self, request):
         shop = Shop.objects.filter(pk = request.data['shop'], salesman__user = request.user)
         if shop.count() == 0:
@@ -1315,6 +1342,7 @@ class AddAdvertise(APIView):
 
 # noinspection PyMethodMayBeStatic
 class GetAds(APIView):
+    @silk_profile()
     def post(self, request):
         advertisements = Advertisement.objects.all()
         ads = []
@@ -1330,6 +1358,7 @@ class GetAds(APIView):
 
 # noinspection PyMethodMayBeStatic
 class ApplyDiscount(APIView):
+    @silk_profile()
     def post(self, request):
         discount = Discount.objects.filter(candidate_product__shop__salesman__user = request.user,
                                            pk = request.data['discount_id'])
