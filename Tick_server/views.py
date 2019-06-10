@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from silk.profiling.profiler import silk_profile
 
-from Tick_server import docs
+from Tick_server import docs, responses
 from Tick_server.docs import *
 from Tick_server.responses import *
 from Tick_server.serializers import *
@@ -42,11 +42,11 @@ class SignUpFirstCustomer(APIView):
             return Response(customer_already_exists)
         else:
             Code4Digit.objects.update_or_create(phone_number = phone, defaults = {'code': '1111'})
-            return Response(phone_added_successfully)
+            return Response(responses.phone_added_successfully)
 
 
 # noinspection PyMethodMayBeStatic
-@format_docstring(customer_signup_second, resp = docs.signup_successful)
+@format_docstring(customer_signup_second, resp = customer_signup_successful)
 class SignUpSecondCustomer(APIView):
     # @FullyTested
     """
@@ -57,6 +57,7 @@ class SignUpSecondCustomer(APIView):
     """
     serializer_class = Code4DigitSerializer
     response_serializer_class = ResponseSerializer
+
     @silk_profile()
     def post(self, request) -> Response:
         if not request.user.is_superuser:
@@ -99,7 +100,7 @@ class ResendCodeCustomer(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-@format_docstring(customer_signup_final, resp = signup_successful2)
+@format_docstring(customer_signup_final, resp = customer_signup_successful2)
 class SignUpFinalCustomer(APIView):
     """
     Gets phone number and other information to sign up a user.
@@ -138,16 +139,20 @@ class SignUpFinalCustomer(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(customer_login, resp = login_successful)
 class LoginCustomer(APIView):
+    """
+    Gets phone number and login credentials of a user and tries to login that user
+
+    Request{}
+    Response{resp}
+    """
+    serializer_class = LoginSerializer
+    response_serializer_class = ResponseWithUserSerializer
+
     # @FullyTested
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets phone number and login credentials of a user and tries to login that user
-        @param request: containing phone number and password
-        @return: Response showing whether login is successful or not, if login is successful then sends all user
-        information
-        """
         if not request.user.is_superuser:
             return Response(access_denied)
         if 'phone_number' not in request.data or 'password' not in request.data:
@@ -172,15 +177,20 @@ class LoginCustomer(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(customer_edit_pro, resp = edit_pro_successful)
 class EditCustomerProfile(APIView):
+    """
+    Authenticates the user, validates and changes the information he sends via request.
+
+    Request{}
+    Response{resp}
+    """
+    serializer_class = EditProSerializer
+    response_serializer_class = ResponseSerializer
+
     # @FullyTested
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Authenticates the user, validates and changes the information he sends via I{request}.
-        @param request: Containing information wanted to edit.
-        @return: I{Response} showing whether information updated or not.
-        """
         if 'phone_number' not in request.data:
             return Response(insufficient_data)
         customer = Customer.objects.filter(user__phone_number = request.data['phone_number'],
@@ -204,17 +214,22 @@ class EditCustomerProfile(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(salesman_signup_first, resp = email_added_successfully)
 class SignUpFirstSalesman(APIView):
+    """
+    Gets and saves new salesman email and password
+
+    Request{}
+    Response{resp}
+    """
+    serializer_class = EmailSerializer
+    response_serializer_class = ResponseSerializer
+
     permission_classes = (AllowAny,)
     authentication_classes = []
 
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets and saves new salesman email and password
-        @param request: includes email and password
-        @return: Response showing whether saving email and password was successful or not.
-        """
         if 'email' not in request.data or 'password' not in request.data:
             return Response(insufficient_data)
         email = request.data['email']
@@ -227,17 +242,22 @@ class SignUpFirstSalesman(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(salesman_signup_second, resp = salesman_signup_successful)
 class SignUpSecondSalesman(APIView):
+    """
+    Gets email and code sent to user and checks if it's valid
+
+    Request{}
+    Response{resp}
+    """
     permission_classes = (AllowAny,)
     authentication_classes = []
 
+    serializer_class = SalesmanCode4DigitSerializer
+    response_serializer_class = ResponseSerializer
+
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets email and code sent to user and checks if it's valid
-        @param request: includes email and code
-        @return: Response showing whether the code is valid and sign up is successful or not
-        """
         if 'email' not in request.data or 'code' not in request.data:
             return Response(insufficient_data)
         email = request.data['email']
@@ -249,17 +269,22 @@ class SignUpSecondSalesman(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(salesman_signup_final, resp = salesman_signup_successful2)
 class SignUpFinalSalesman(APIView):
+    """
+    Gets email and other information to sign up a user.
+
+    Request{}
+    Response{resp}
+    """
+    serializer_class = SalesmanInfoSerializer
+    response_serializer_class = ResponseWithTokenSerializer
+
     permission_classes = (AllowAny,)
     authentication_classes = []
 
     @transaction.atomic
     def post(self, request) -> Response:
-        """
-        Gets email and other information to sign up a user.
-        @param request: includes email and all necessary information to create new user
-        @return: Response showing whether sign up is successful or not
-        """
         if 'email' not in request.data:
             return Response(insufficient_data)
         request.data._mutable = True
@@ -1389,3 +1414,42 @@ class ApplyDiscount(APIView):
             'result': True,
             'message': 'تخفیف اعمال شد.'
         })
+
+
+# noinspection PyMethodMayBeStatic
+class SalesmanShops(APIView):
+    @silk_profile()
+    def get(self, request):
+        shops = Shop.objects.filter(salesman = request.user.salesman)
+        serializer = ShopSerializer(shops, many = True)
+        return Response({
+            'result': True,
+            'message': 'لیست فروشگاه ها',
+            'shops': serializer.data
+        })
+
+
+# noinspection PyMethodMayBeStatic
+# TODO
+class SalesmanPolls(APIView):
+    @silk_profile()
+    def get(self, request):
+        data = {
+            'result': True,
+            'message': 'لیست نظرسنجی ها',
+            'polls': []
+        }
+        polls = Poll.objects.filter(shop__salesman = request.user.salesman)
+        for poll in polls:
+            if poll.type_poll == 'LinearScalePoll':
+                serializer = LinearScalePollSerializer(poll.linear_scale_poll)
+            elif poll.type_poll == 'MultipleChoicePoll':
+                serializer = MultipleChoicePollSerializer(poll.multiple_choice_poll)
+            elif poll.type_poll == 'CheckBoxPoll':
+                serializer = CheckBoxPollSerializer(poll.check_box_poll)
+            elif poll.type_poll == 'ShortAnswerPoll':
+                serializer = ShortAnswerSerializer(poll.short_answer_poll)
+            else:
+                serializer = ParagraphPollSerializer(poll.paragraph_poll)
+            data['polls'].append(serializer.data)
+        return Response(data = data)

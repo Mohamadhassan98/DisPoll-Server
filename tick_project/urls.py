@@ -64,6 +64,8 @@ urlpatterns_salesman = [
     url('add-advertisement/', AddAdvertise.as_view(), name = 'Add_new_advertise_for_shop'),
     url('apply-discount/', ApplyDiscount.as_view(), name = 'apply_discount_for_customer'),
     url('statistics/', Statistics.as_view(), name = 'show_statistics_for_shop'),
+    url('shops/', SalesmanShops.as_view(), name = 'show_all_shops'),
+    url('polls/', SalesmanPolls.as_view(), name = 'show_all_polls')
 ]
 
 urlpatterns = [
