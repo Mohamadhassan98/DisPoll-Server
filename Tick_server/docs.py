@@ -93,5 +93,5 @@ class ResponseSerializer(serializers.ModelSerializer):
 
 class ResponseWithTokenSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Response
+        model = ResponseWithToken
         exclude = ('id',)
