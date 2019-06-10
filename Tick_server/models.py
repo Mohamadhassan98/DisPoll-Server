@@ -47,12 +47,12 @@ class ShopKind(models.Model):
 
 # noinspection PyUnusedLocal
 def upload_shop_to_path(instance, filename):
-    return 'Shop/shop_' + str(time.time_ns()) + '.jpg'
+    return 'Shop/shop_' + str(time.time()) + '.jpg'
 
 
 # noinspection PyUnusedLocal
 def upload_license_to_path(instance, filename):
-    return 'Business-License/license_' + str(time.time_ns()) + '.jpg'
+    return 'Business-License/license_' + str(time.time()) + '.jpg'
 
 
 class Shop(models.Model):
