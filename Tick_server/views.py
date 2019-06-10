@@ -4,28 +4,35 @@ from django.contrib.auth import login
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from drf_autodocs.decorators import format_docstring
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from silk.profiling.profiler import silk_profile
 
+from Tick_server import docs
+from Tick_server.docs import *
 from Tick_server.responses import *
 from Tick_server.serializers import *
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(customer_signup_first, response_example = docs.phone_added_successfully)
 class SignUpFirstCustomer(APIView):
-    serializer_class = Code4DigitSerializer
+    """
+    Gets and saves new customers
+
+    Request{}
+    Response{response_example}
+    """
+    serializer_class = PhoneSerializer
+    response_serializer_class = ResponseSerializer
 
     # @FullyTested
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets and saves new customers I{phone_number}
-        @param request: includes I{phone_number} only
-        @return: Response showing whether saving phone number was successful or not.
-        """
+
         if not request.user.is_superuser:
             return Response(access_denied)
         if 'phone_number' not in request.data:
@@ -39,15 +46,19 @@ class SignUpFirstCustomer(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(customer_signup_second, resp = docs.signup_successful)
 class SignUpSecondCustomer(APIView):
     # @FullyTested
+    """
+    Gets phone number and code sent to user and checks if it's valid
+
+    Request{}
+    Response{resp}
+    """
+    serializer_class = Code4DigitSerializer
+    response_serializer_class = ResponseSerializer
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets phone number and code sent to user and checks if it's valid
-        @param request: includes phone number and code
-        @return: Response showing whether the code is valid and sign up is successful or not
-        """
         if not request.user.is_superuser:
             return Response(access_denied)
         if 'phone_number' not in request.data or 'code' not in request.data:
@@ -61,15 +72,20 @@ class SignUpSecondCustomer(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(customer_signup_first, resp = docs.code_resent)
 class ResendCodeCustomer(APIView):
+    """
+    Gets phone number and sends a new code to that number
+
+    Request{}
+    Response{resp}
+    """
+    serializer_class = PhoneSerializer
+    response_serializer_class = ResponseSerializer
+
     # @FullyTested
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets phone number and sends a new code to that number
-        @param request: includes phone number only
-        @return: Response always contains true
-        """
         if not request.user.is_superuser:
             return Response(access_denied)
         if 'phone_number' not in request.data:
@@ -83,18 +99,20 @@ class ResendCodeCustomer(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(customer_signup_final, resp = signup_successful2)
 class SignUpFinalCustomer(APIView):
-    serializer_class = UserSerializer
-    queryset = CustomUser.objects.all()
+    """
+    Gets phone number and other information to sign up a user.
+
+    Request{}
+    Response{resp}
+    """
+    serializer_class = docs.CustomerSerializer
+    response_serializer_class = ResponseWithTokenSerializer
 
     # @FullyTested
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets phone number and other information to sign up a user.
-        @param request: includes phone number and all necessary information to create new user
-        @return: Response showing whether sign up is successful or not
-        """
         if not request.user.is_superuser:
             return Response(access_denied)
         if 'phone_number' not in request.data:
