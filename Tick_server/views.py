@@ -959,11 +959,12 @@ class SubmitPoll(APIView):
         product.save()
         candidate_product = discount.candidate_product
         serializer = CandidateProductSerializer(candidate_product)
-        serializer.data.update({'code': discount.code})
+        copy = serializer.data.copy()
+        copy.update({'code': discount.code})
         return Response({
             'result': True,
             'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.',
-            'discount': serializer.data
+            'discount': copy
         })
 
 

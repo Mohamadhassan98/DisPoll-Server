@@ -329,3 +329,10 @@ class EditSalesmanSerializer(serializers.ModelSerializer):
             'username', 'password', 'birth_date', 'gender', 'location', 'phone_number', 'city', 'first_name',
             'last_name', 'avatar'
         )
+
+
+add_shop = """
+{
+    
+}
+"""
