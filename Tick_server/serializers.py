@@ -89,7 +89,7 @@ class GetAdvertisementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Advertisement
         fields = '__all__'
-        depth = 1
+        depth = 2
 
 
 class DiscountSerializer(serializers.ModelSerializer):

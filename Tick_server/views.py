@@ -433,16 +433,19 @@ class EditSalesmanProfileView(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-# @format_docstring(add_shop, resp = add_shop_successful)
+@format_docstring(add_shop, resp = add_shop_successful)
 class AddShop(APIView):
+    """
+    Adds a new shop.
+
+    Request{}
+    Response{resp}
+    """
+    serializer_class = ShopSerializer
+    response_serializer_class = ResponseWithShopIdSerializer
+
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Adds a new shop.
-        @param request: containing name, address and all other information to add a new shop
-        @return: Response showing whether adding a new shop was successful, if adding is successful, then sends shop
-        id
-        """
         salesman = Salesman.objects.get(pk = request.data['salesman']).user
         if salesman != request.user:
             return Response({
@@ -466,14 +469,20 @@ class AddShop(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(add_discount, resp = add_discount_successful)
 class AddDiscount(APIView):
+    """
+    Adds discount by number of count.
+
+    Request{}
+    Response{resp}
+    """
+
+    serializer_class = CandidateProductSerializer
+    response_serializer_class = ResponseSerializer
+
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Adds discount by number of count.
-        @param request: containing discount information and count of discount to add
-        @return: Response showing whether adding discount is successful or not
-        """
         shop = Shop.objects.get(pk = request.data['shop'])
         shops = request.user.salesman.shops
         if shops.filter(pk = shop.pk).count() == 0:
@@ -504,14 +513,19 @@ class AddDiscount(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(active_discounts, resp = active_discounts_list)
 class ActiveDiscountListView(APIView):
+    """
+    Gets phone number, page and offset and retrieve active discounts list of that customer
+
+    Request{}
+    Response{resp}
+    """
+    serializer_class = DiscountListViewSerializer
+    response_serializer_class = ResponseWithDiscountsSerializer
+
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets phone number, page and offset and retrieve active discounts list of that customer
-        @param request: Containing phone number, page and offset
-        @return: Response containing active discounts belong to that customer
-        """
         page = int(request.data['page'])
         offset = int(request.data['offset'])
         phone = request.data['phone_number']
@@ -539,14 +553,20 @@ class ActiveDiscountListView(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(active_discounts, resp = active_discounts_list)
 class InactiveDiscountListView(APIView):
+    """
+    Gets phone number, page and offset and retrieve inactive discounts list of that customer
+
+    Request{}
+    Response{resp}
+    """
+
+    serializer_class = DiscountListViewSerializer
+    response_serializer_class = ResponseWithDiscountsSerializer
+
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets phone number, page and offset and retrieve inactive discounts list of that customer
-        @param request: Containing phone number, page and offset
-        @return: Response containing inactive discounts belong to that customer
-        """
         page = int(request.data['page'])
         offset = int(request.data['offset'])
         phone = request.data['phone_number']
@@ -574,17 +594,20 @@ class InactiveDiscountListView(APIView):
 
 
 # noinspection PyMethodMayBeStatic, PyUnusedLocal
+@format_docstring(get_cities)
 class GetCities(APIView):
+    """
+    Returns all cities.
+
+    Response{}
+    """
+    response_serializer_class = ResponseWithCitiesSerializer
+
     permission_classes = (AllowAny,)
     authentication_classes = []
 
     @silk_profile()
     def get(self, request) -> Response:
-        """
-        Returns all cities.
-        @type request: Unused
-        @return: Response containing all cities in the database.
-        """
         cities = City.objects.all()
         data = []
         for city in cities:
@@ -597,18 +620,18 @@ class GetCities(APIView):
 
 
 # noinspection PyMethodMayBeStatic, PyUnusedLocal
+@format_docstring(get_shop_kinds)
 class GetShopKinds(APIView):
+    """
+    Returns ShopKind corresponding requested id.
+
+    Response{}
+    """
     permission_classes = (AllowAny,)
     authentication_classes = []
-
+    response_serializer_class = ResponseWithShopKindsSerializer
     @silk_profile()
     def get(self, request) -> Response:
-        """
-        Returns ShopKind corresponding requested I{id}.
-        @param request: Unused
-        @return: Response showing whether ShopKind was found or not. If ShopKind was found, it will be returned
-        respectively.
-        """
         data = []
         shop_kinds = ShopKind.objects.all()
         for kind in shop_kinds:

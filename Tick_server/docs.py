@@ -140,7 +140,7 @@ class ResponseWithUser(ResponseWithToken):
 class ResponseWithUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = ResponseWithUser
-        fields = '__all__'
+        exclude = ('id',)
         depth = 1
 
 
@@ -276,15 +276,15 @@ salesman_login = """
 
 salesman_login_successful = """
 {
-    "result": true,
-    "message": "ورود با موفقیت انجام شد.",
-    "salesman": {
-        "id": 1,
-        "avatar": "/new-temp/Salesman/ghazal04194.jpg",
-        "first_name": "Ghazal",
-        "last_name": "Rabiei"
+    'result': True,
+    'message': 'ورود با موفقیت انجام شد.',
+    'salesman': {
+        'id': 1,
+        'avatar': '/new-temp/Salesman/ghazal04194.jpg',
+        'first_name': 'Ghazal',
+        'last_name': 'Rabiei'
     },
-    "token": "e52965d673398d2f27af363b6836fc7db2d73237"
+    'token': 'e52965d673398d2f27af363b6836fc7db2d73237'
 }
 """
 
@@ -302,7 +302,7 @@ class ResponseWithTokenWithSalesman(ResponseWithToken):
 class LoginSalesmanSerializer(serializers.ModelSerializer):
     class Meta:
         model = ResponseWithTokenWithSalesman
-        fields = '__all__'
+        exclude = ('id',)
         depth = 1
 
 
@@ -335,6 +335,206 @@ add_shop = """
 {
     'name': 'هایپر می',
     'address': 'اصفهان، مصلی',
-    
+    'phone_number': '03136624456'
+    'business_license': 'Business License's Path',
+    'salesman': '1',
+    'shop_kind': '1',
+    'picture': 'Picture's Path'
 }
 """
+
+add_shop_successful = """
+{
+    'result': True,
+    'message': 'اضافه کردن فروشگاه با موفقیت انجام شد.',
+    'shop_id': 1
+}
+"""
+
+
+class ResponseWithShopId(MyResponse):
+    shop_id = models.CharField(max_length = 10)
+
+
+class ResponseWithShopIdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResponseWithShopId
+        exclude = ('id',)
+
+
+add_discount = """
+{
+    'percent': '6',
+    'count': '100',
+    'shop': 1,
+    'expire_date': '2020-01-02',
+    'days': '15'
+}
+"""
+
+add_discount_successful = """
+{
+    'result': True,
+    'message': 'اضافه کردن تخفیف با موفقیت انجام شد.'
+}
+"""
+
+active_discounts = """
+{
+    'phone_number': '09130172688',
+    'page': '0',
+    'offset': '10'
+}
+"""
+
+active_discounts_list = """
+{
+    "result": True,
+    "message": "جستجو با موفقیت انجام شد.",
+    "discounts": [
+        {
+            "id": 1,
+            "description": "",
+            "percent": 5,
+            "count": 2,
+            "product_brand": null,
+            "product_id": null,
+            "product_name": null,
+            "product_barcode": null,
+            "expire_date": "2020-01-02",
+            "days": 10,
+            "shop": 1,
+            "code": "8IO40"
+        },
+        {
+            "id": 1,
+            "description": "",
+            "percent": 5,
+            "count": 2,
+            "product_brand": null,
+            "product_id": null,
+            "product_name": null,
+            "product_barcode": null,
+            "expire_date": "2020-01-02",
+            "days": 10,
+            "shop": 1,
+            "code": "elZGM"
+        }
+    ]
+}
+"""
+
+
+class DiscountListView(models.Model):
+    phone_number = models.CharField(max_length = 13)
+    page = models.CharField(max_length = 10)
+    offset = models.CharField(max_length = 10)
+
+
+class DiscountInfo(CandidateProduct):
+    code = models.CharField(max_length = 5, unique = True)
+
+
+class ResponseWithDiscounts(MyResponse):
+    discounts = models.OneToOneField(DiscountInfo, on_delete = models.CASCADE)
+
+
+class ResponseWithDiscountsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResponseWithDiscounts
+        exclude = ('id',)
+        depth = 1
+
+
+class DiscountInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiscountInfo
+        fields = '__all__'
+
+
+class DiscountListViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiscountListView
+        fields = '__all__'
+
+
+get_cities = """
+{
+    "result": True,
+    "message": "نام شهرها",
+    "cities": [
+        {
+            "id": 1,
+            "name": "اصفهان"
+        },
+        {
+            "id": 2,
+            "name": "شیراز"
+        },
+        {
+            "id": 3,
+            "name": "تهران"
+        },
+        {
+            "id": 4,
+            "name": "یزد"
+        },
+        {
+            "id": 5,
+            "name": "مشهد"
+        }
+    ]
+}
+"""
+
+
+class ResponseWithCities(MyResponse):
+    cities = models.OneToOneField(City, on_delete = models.CASCADE)
+
+
+class ResponseWithCitiesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResponseWithCities
+        exclude = ('id',)
+        depth = 1
+
+
+get_shop_kinds = """
+{
+    "result": true,
+    "message": "نوع فروشگاه ها",
+    "shop_kinds": [
+        {
+            "id": 1,
+            "name": "مواد غذایی"
+        },
+        {
+            "id": 2,
+            "name": "پوشاک"
+        },
+        {
+            "id": 3,
+            "name": "آرایشی بهداشتی"
+        },
+        {
+            "id": 4,
+            "name": "لوازم التحریر"
+        },
+        {
+            "id": 5,
+            "name": "هتل"
+        }
+    ]
+}
+"""
+
+
+class ResponseWithShopKinds(MyResponse):
+    shop_kinds = models.OneToOneField(ShopKind, on_delete = models.CASCADE)
+
+
+class ResponseWithShopKindsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResponseWithShopKinds
+        exclude = ('id',)
+        depth = 1
