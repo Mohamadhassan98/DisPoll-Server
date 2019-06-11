@@ -522,20 +522,19 @@ class ActiveDiscountListView(APIView):
                 'message': 'دسترسی رد شد.'
             })
         user = user[0]
-        discounts = []
-        candidate_products = CandidateProduct.objects.filter(discounts__active = True,
-                                                             discounts__customer = Customer.objects.get(user = user))[
-                             page * offset: page * offset + offset]
-        for candidate_product in candidate_products:
+        discounts = Discount.objects.filter(active = True, customer = Customer.objects.get(user = user))[
+                    page * offset: page * offset + offset]
+        discounts_list = []
+        for discount in discounts:
+            candidate_product = discount.candidate_product
             serializer = CandidateProductSerializer(candidate_product)
             copy = serializer.data.copy()
-            copy.update({'code': candidate_product.discount.code})
-            discounts.append(copy)
-
+            copy.update({'code': discount.code})
+            discounts_list.append(copy)
         return Response({
             'result': True,
             'message': 'جستجو با موفقیت انجام شد.',
-            'discounts': discounts
+            'discounts': discounts_list
         })
 
 
@@ -558,20 +557,19 @@ class InactiveDiscountListView(APIView):
                 'message': 'دسترسی رد شد.'
             })
         user = user[0]
-        discounts = []
-        candidate_products = CandidateProduct.objects.filter(discounts__active = False,
-                                                             discounts__customer = Customer.objects.get(user = user))[
-                             page * offset: page * offset + offset]
-        for candidate_product in candidate_products:
+        discounts = Discount.objects.filter(active = False, customer = Customer.objects.get(user = user))[
+                    page * offset: page * offset + offset]
+        discounts_list = []
+        for discount in discounts:
+            candidate_product = discount.candidate_product
             serializer = CandidateProductSerializer(candidate_product)
             copy = serializer.data.copy()
-            copy.update({'code': candidate_product.discount.code})
-            discounts.append(copy)
-
+            copy.update({'code': discount.code})
+            discounts_list.append(copy)
         return Response({
             'result': True,
             'message': 'جستجو با موفقیت انجام شد.',
-            'discounts': discounts
+            'discounts': discounts_list
         })
 
 
