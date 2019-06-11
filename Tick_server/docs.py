@@ -288,6 +288,28 @@ salesman_login_successful = """
 }
 """
 
-# class LoginSalesmanSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = SalesmanInfo
+
+class SalesmanLoginInfo(models.Model):
+    first_name = models.CharField(max_length = 30, blank = True)
+    last_name = models.CharField(max_length = 150, blank = True)
+    avatar = models.ImageField()
+
+
+class ResponseWithTokenWithSalesman(ResponseWithToken):
+    salesman = models.OneToOneField(SalesmanLoginInfo, on_delete = models.CASCADE, related_name = 'response')
+
+
+class LoginSalesmanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ResponseWithTokenWithSalesman
+        fields = '__all__'
+        depth = 1
+
+
+profile_edit_pro = """
+{
+    'avatar': 'New Picture's Path',
+    'birth_data': '1997-01-02',
+    'email': 
+}
+"""

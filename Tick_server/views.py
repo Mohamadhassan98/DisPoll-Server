@@ -336,21 +336,21 @@ class ResendCodeSalesman(APIView):
 # noinspection PyMethodMayBeStatic
 @format_docstring(salesman_login, resp = salesman_login_successful)
 class LoginSalesman(APIView):
+    """
+    Gets email or username and login credentials of a user and tries to login that user
+
+    Request{}
+    Response{resp}
+    """
     permission_classes = (AllowAny,)
     authentication_classes = []
 
     serializer_class = EmailSerializer
 
-    # response_serializer_class =
+    response_serializer_class = LoginSalesmanSerializer
 
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets email or username and login credentials of a user and tries to login that user
-        @param request: containing email or username and password
-        @return: Response showing whether login is successful or not, if login is successful then sends all user
-        information
-        """
         email = request.data['email']
         password = request.data['password']
         salesman = Salesman.objects.filter(user__email = email)
@@ -371,7 +371,11 @@ class LoginSalesman(APIView):
         id_user = copy.pop('user')
         user = CustomUser.objects.get(id = id_user)
         token, _ = Token.objects.get_or_create(user = user)
-        copy.update({'first_name': user.first_name, 'last_name': user.last_name})
+        shops = salesman[0].shops.all()
+        shops_list = []
+        for shop in shops:
+            shops_list.append({'id': shop.id, 'name': shop.name})
+        copy.update({'first_name': user.first_name, 'last_name': user.last_name, 'shops': shops_list})
         return Response({
             'result': True,
             'message': 'ورود با موفقیت انجام شد.',
@@ -381,6 +385,7 @@ class LoginSalesman(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(profile_edit_pro, resp = edit_pro_successful)
 class EditSalesmanProfileView(APIView):
     @transaction.atomic
     @silk_profile()
