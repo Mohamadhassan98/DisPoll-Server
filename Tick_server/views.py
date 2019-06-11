@@ -139,7 +139,7 @@ class SignUpFinalCustomer(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-@format_docstring(customer_login, resp = login_successful)
+@format_docstring(customer_login, resp = customer_login_successful)
 class LoginCustomer(APIView):
     """
     Gets phone number and login credentials of a user and tries to login that user
@@ -309,17 +309,23 @@ class SignUpFinalSalesman(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(salesman_email, resp = docs.code_resent)
 class ResendCodeSalesman(APIView):
+    """
+    Gets email and sends a new code to that email
+
+    Request{}
+    Response{resp}
+    """
+
+    serializer_class = EmailSerializer
+    response_serializer_class = ResponseSerializer
+
     permission_classes = (AllowAny,)
     authentication_classes = []
 
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Gets email and sends a new code to that email
-        @param request: includes email only
-        @return: Response always contains true
-        """
         if 'email' not in request.data:
             return Response(insufficient_data)
         email = request.data['email']
@@ -328,9 +334,14 @@ class ResendCodeSalesman(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+@format_docstring(salesman_login, resp = salesman_login_successful)
 class LoginSalesman(APIView):
     permission_classes = (AllowAny,)
     authentication_classes = []
+
+    serializer_class = EmailSerializer
+
+    # response_serializer_class =
 
     @silk_profile()
     def post(self, request) -> Response:
@@ -359,12 +370,8 @@ class LoginSalesman(APIView):
         copy = serializer.data.copy()
         id_user = copy.pop('user')
         user = CustomUser.objects.get(id = id_user)
-        shops = salesman[0].shops.all()
         token, _ = Token.objects.get_or_create(user = user)
-        shops_list = []
-        for shop in shops:
-            shops_list.append({'id': shop.id, 'name': shop.name})
-        copy.update({'first_name': user.first_name, 'last_name': user.last_name, 'shops': shops_list})
+        copy.update({'first_name': user.first_name, 'last_name': user.last_name})
         return Response({
             'result': True,
             'message': 'ورود با موفقیت انجام شد.',
@@ -964,15 +971,20 @@ class MyPolls(APIView):
             })
         customer = customer[0]
         all_polls = Poll.objects.filter(Q(paragraph_poll__paragraph_poll_answers__customer = customer,
-                                          paragraph_poll__paragraph_poll_answers__poll_answer__completed = False) |
+                                          paragraph_poll__paragraph_poll_answers__poll_answer__completed = False,
+                                          expire_date__gte = timezone.now()) |
                                         Q(short_answer_poll__short_answer_poll_answers__customer = customer,
-                                          short_answer_poll__short_answer_poll_answers__poll_answer__completed = False) |
+                                          short_answer_poll__short_answer_poll_answers__poll_answer__completed = False,
+                                          expire_date__gte = timezone.now()) |
                                         Q(linear_scale_poll__linear_scale_poll_answers__customer = customer,
-                                          linear_scale_poll__linear_scale_poll_answers__poll_answer__completed = False) |
+                                          linear_scale_poll__linear_scale_poll_answers__poll_answer__completed = False,
+                                          expire_date__gte = timezone.now()) |
                                         Q(check_box_poll__check_box_poll_answers__customer = customer,
-                                          check_box_poll__check_box_poll_answers__poll_answer__completed = False) |
+                                          check_box_poll__check_box_poll_answers__poll_answer__completed = False,
+                                          expire_date__gte = timezone.now()) |
                                         Q(multiple_choice_poll__multiple_choice_answers__customer = customer,
-                                          multiple_choice_poll__multiple_choice_answers__poll_answer__completed = False))
+                                          multiple_choice_poll__multiple_choice_answers__poll_answer__completed = False,
+                                          expire_date__gte = timezone.now()))
         data = {
             'result': True,
             'message': 'نظرسنجی های یک کاربر',
@@ -1018,6 +1030,12 @@ class PollToCustomer(APIView):
         @param request: Containing shop and customer's phone number.
         @return: A Response having random poll assigned to customer, if any exists.
         """
+        phone_number = request.data['phone_number']
+        if Customer.objects.filter(user__phone_number = phone_number).count() == 0:
+            return Response({
+                'result': False,
+                'message': 'کاربری با این شماره یافت نشد'
+            })
         shop = Shop.objects.get(pk = request.data['shop'])
         shops = request.user.salesman.shops
         if shops.filter(pk = shop.pk).count() == 0:

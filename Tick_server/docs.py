@@ -104,7 +104,7 @@ customer_login = """
 }
 """
 
-login_successful = """
+customer_login_successful = """
 {
     'result': true,
     'message': 'ورود با موفقیت انجام شد.',
@@ -236,7 +236,7 @@ salesman_signup_successful2 = """
 {
     'result': True,
     'message': 'ثبت نام با موفقیت انجام شد.',
-    'token': '0aaba3f2b2d537410ffce4268ba7358ccfd5a9fc'
+    'token': 'e52965d673398d2f27af363b6836fc7db2d73237'
 }
 """
 
@@ -252,3 +252,42 @@ class SalesmanInfoSerializer(serializers.ModelSerializer):
             'username', 'email', 'password', 'birth_date', 'gender', 'location', 'phone_number', 'city', 'first_name',
             'last_name', 'avatar'
         )
+
+
+salesman_email = """
+{
+    'email': 'ghazal04194@gmai.com'
+}
+"""
+
+
+class EmailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('email',)
+
+
+salesman_login = """
+{
+    'email': 'ghazal04194@gmail.com',
+    'password': 'This_is/A strong ##PASSword!'
+}
+"""
+
+salesman_login_successful = """
+{
+    "result": true,
+    "message": "ورود با موفقیت انجام شد.",
+    "salesman": {
+        "id": 1,
+        "avatar": "/new-temp/Salesman/ghazal04194.jpg",
+        "first_name": "Ghazal",
+        "last_name": "Rabiei"
+    },
+    "token": "e52965d673398d2f27af363b6836fc7db2d73237"
+}
+"""
+
+# class LoginSalesmanSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = SalesmanInfo
