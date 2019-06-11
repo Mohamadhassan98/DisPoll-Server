@@ -211,7 +211,7 @@ class CandidateProduct(models.Model):
     description = models.TextField(blank = True)
     percent = models.IntegerField(default = 5)
     count = models.IntegerField(default = 5)
-    product_brand = models.CharField(max_length = 50, null = True)
+    product_brand = models.CharField(max_length = 50, blank = True, null = True)
     product_id = models.CharField(max_length = 50, blank = True, null = True)
     product_name = models.CharField(max_length = 50, blank = True, null = True)
     product_barcode = models.ImageField(blank = True, null = True)

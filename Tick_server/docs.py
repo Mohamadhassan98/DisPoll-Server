@@ -321,4 +321,6 @@ salesman_edit_pro_successful = """
 }
 """
 
-# class EditSalesman
+# class EditSalesmanSerializer(serializers.Model):
+#     class Meta:
+#         model =
