@@ -433,6 +433,7 @@ class EditSalesmanProfileView(APIView):
 
 
 # noinspection PyMethodMayBeStatic
+# @format_docstring(add_shop, resp = add_shop_successful)
 class AddShop(APIView):
     @silk_profile()
     def post(self, request) -> Response:
@@ -956,7 +957,9 @@ class SubmitPoll(APIView):
         discount = Discount.objects.create(code = code, active = True, candidate_product = product, customer = customer)
         product.count -= 1
         product.save()
-        serializer = DiscountSerializer(discount)
+        candidate_product = discount.candidate_product
+        serializer = CandidateProductSerializer(candidate_product)
+        serializer.data.update({'code': discount.code})
         return Response({
             'result': True,
             'message': 'تخفیف مورد نظر به کاربر تخصیص داده شد.',
