@@ -1386,7 +1386,7 @@ class AddAdvertise(APIView):
 # noinspection PyMethodMayBeStatic
 class GetAds(APIView):
     @silk_profile()
-    def post(self, request):
+    def get(self, request):
         advertisements = Advertisement.objects.all()
         ads = []
         for ad in advertisements:
@@ -1440,16 +1440,47 @@ class SalesmanPolls(APIView):
             'polls': []
         }
         polls = Poll.objects.filter(shop__salesman = request.user.salesman)
+        print(polls)
         for poll in polls:
             if poll.type_poll == 'LinearScalePoll':
-                serializer = LinearScalePollSerializer(poll.linear_scale_poll)
+                linear_scale_poll = poll.linear_scale_poll
+                data['polls'].append({
+                    'text': poll.text,
+                    'start': linear_scale_poll.start,
+                    'step': linear_scale_poll.step,
+                    'choices_count': linear_scale_poll.choices_count,
+                    'poll_id': poll.id
+                })
             elif poll.type_poll == 'MultipleChoicePoll':
-                serializer = MultipleChoicePollSerializer(poll.multiple_choice_poll)
+                # serializer = MultipleChoicePollSerializer(poll.multiple_choice_poll)
+                tmp = {
+                    'text': poll.text,
+                    'options': [],
+                    'poll_id': poll.id
+                }
+                index = 1
+                options = poll.multiple_choice_poll.options.all()
+                print(options)
+                for option in options:
+                    option_name = 'option_' + str(index)
+                    index += 1
+                    tmp['options'].append({option_name: option.answer_text})
+                data['polls'].append(tmp)
             elif poll.type_poll == 'CheckBoxPoll':
                 serializer = CheckBoxPollSerializer(poll.check_box_poll)
-            elif poll.type_poll == 'ShortAnswerPoll':
-                serializer = ShortAnswerSerializer(poll.short_answer_poll)
+                options = poll.check_box_poll.options.all()
+                print(options)
+                index = 1
+                tmp = {
+                    'text': poll.text,
+                    'options': [],
+                    'poll_id': poll.id
+                }
+                for option in options:
+                    option_name = 'option_' + str(index)
+                    index += 1
+                    tmp['options'].append({option_name: option.answer_text})
+                data['polls'].append(tmp)
             else:
-                serializer = ParagraphPollSerializer(poll.paragraph_poll)
-            data['polls'].append(serializer.data)
+                data['polls'].append({'text': poll.text, 'poll_id': poll.id})
         return Response(data = data)
