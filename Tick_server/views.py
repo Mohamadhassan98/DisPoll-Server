@@ -177,7 +177,7 @@ class LoginCustomer(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-@format_docstring(customer_edit_pro, resp = edit_pro_successful)
+@format_docstring(customer_edit_pro, resp = customer_edit_pro_successful)
 class EditCustomerProfile(APIView):
     """
     Authenticates the user, validates and changes the information he sends via request.
@@ -385,16 +385,17 @@ class LoginSalesman(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-@format_docstring(profile_edit_pro, resp = edit_pro_successful)
+@format_docstring(salesman_profile_edit_pro, resp = salesman_edit_pro_successful)
 class EditSalesmanProfileView(APIView):
+    """
+    Authenticates the user, validates and changes the information he sends via request.
+
+    Request{}
+    Response{resp}
+    """
     @transaction.atomic
     @silk_profile()
     def post(self, request) -> Response:
-        """
-        Authenticates the user, validates and changes the information he sends via I{request}.
-        @param request: Containing information wanted to edit.
-        @return: I{Response} showing whether information updated or not.
-        """
         salesman = Salesman.objects.filter(user__email = request.data['email'], user = request.user)
         if salesman.count() == 0:
             return Response(access_denied)
@@ -1427,7 +1428,7 @@ class ApplyDiscount(APIView):
     @silk_profile()
     def post(self, request):
         discount = Discount.objects.filter(candidate_product__shop__salesman__user = request.user,
-                                           pk = request.data['discount_id'])
+                                           code = request.data['discount_code'])
         if discount.count() == 0:
             return Response(access_denied)
         discount = discount[0]

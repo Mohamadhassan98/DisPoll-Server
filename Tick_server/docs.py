@@ -152,7 +152,7 @@ customer_edit_pro = """
 }
 """
 
-edit_pro_successful = """
+customer_edit_pro_successful = """
 {
     'result': True,
     'message': 'ویرایش اطلاعات با موفقیت انجام شد.'
@@ -306,10 +306,19 @@ class LoginSalesmanSerializer(serializers.ModelSerializer):
         depth = 1
 
 
-profile_edit_pro = """
+salesman_profile_edit_pro = """
 {
     'avatar': 'New Picture's Path',
     'birth_data': '1997-01-02',
     'email': 
 }
 """
+
+salesman_edit_pro_successful = """
+{
+    "result": True,
+    "message": "ویرایش اطلاعات با موفقیت انجام شد."
+}
+"""
+
+# class EditSalesman
