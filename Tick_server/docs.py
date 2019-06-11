@@ -333,6 +333,8 @@ class EditSalesmanSerializer(serializers.ModelSerializer):
 
 add_shop = """
 {
+    'name': 'هایپر می',
+    'address': 'اصفهان، مصلی',
     
 }
 """
