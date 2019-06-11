@@ -321,6 +321,11 @@ salesman_edit_pro_successful = """
 }
 """
 
-# class EditSalesmanSerializer(serializers.Model):
-#     class Meta:
-#         model =
+
+class EditSalesmanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SalesmanInfo
+        fields = (
+            'username', 'password', 'birth_date', 'gender', 'location', 'phone_number', 'city', 'first_name',
+            'last_name', 'avatar'
+        )

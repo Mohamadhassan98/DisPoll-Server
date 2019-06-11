@@ -393,6 +393,10 @@ class EditSalesmanProfileView(APIView):
     Request{}
     Response{resp}
     """
+
+    serializer_class = EditSalesmanSerializer
+    response_serializer_class = ResponseSerializer
+
     @transaction.atomic
     @silk_profile()
     def post(self, request) -> Response:
@@ -1272,7 +1276,7 @@ class GetShopById(APIView):
                 'message': 'دسترسی رد شد.'
             })
         shop_kind = ShopKind.objects.get(pk = shop.shop_kind_id)
-        serializer = ShopSerializer(shop)
+        serializer = ShopInfoSerializer(shop)
         serializer.data.update({'shop_kind': shop_kind.name})
         return Response({
             'result': True,

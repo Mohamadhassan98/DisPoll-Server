@@ -197,3 +197,10 @@ class Code4DigitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Code4Digit
         fields = '__all__'
+
+
+class ShopInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shop
+        fields = '__all__'
+        depth = 1
