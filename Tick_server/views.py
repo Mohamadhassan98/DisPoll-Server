@@ -1017,7 +1017,7 @@ class MyPolls(APIView):
                 for option in poll.multiple_choice_poll.options.all():
                     choices.append(option.answer_text)
                 data_poll.update({'choices': choices})
-            else:
+            elif poll.type_poll == 'CheckBoxPoll':
                 choices = []
                 for option in poll.check_box_poll.options.all():
                     choices.append(option.answer_text)
