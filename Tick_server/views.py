@@ -1533,6 +1533,7 @@ class SalesmanPolls(APIView):
             if poll.type_poll == 'LinearScalePoll':
                 linear_scale_poll = poll.linear_scale_poll
                 data['polls'].append({
+                    'type': poll.type_poll,
                     'text': poll.text,
                     'start': linear_scale_poll.start,
                     'step': linear_scale_poll.step,
@@ -1542,6 +1543,7 @@ class SalesmanPolls(APIView):
             elif poll.type_poll == 'MultipleChoicePoll':
                 # serializer = MultipleChoicePollSerializer(poll.multiple_choice_poll)
                 tmp = {
+                    'type': poll.type_poll,
                     'text': poll.text,
                     'options': [],
                     'poll_id': poll.id
@@ -1560,6 +1562,7 @@ class SalesmanPolls(APIView):
                 print(options)
                 index = 1
                 tmp = {
+                    'type': poll.type_poll,
                     'text': poll.text,
                     'options': [],
                     'poll_id': poll.id
@@ -1570,5 +1573,5 @@ class SalesmanPolls(APIView):
                     tmp['options'].append({option_name: option.answer_text})
                 data['polls'].append(tmp)
             else:
-                data['polls'].append({'text': poll.text, 'poll_id': poll.id})
+                data['polls'].append({'type': poll.type_poll, 'text': poll.text, 'poll_id': poll.id})
         return Response(data = data)
