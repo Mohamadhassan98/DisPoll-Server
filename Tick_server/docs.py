@@ -296,7 +296,7 @@ class SalesmanLoginInfo(models.Model):
 
 
 class ResponseWithTokenWithSalesman(ResponseWithToken):
-    salesman = models.OneToOneField(SalesmanLoginInfo, on_delete = models.CASCADE, related_name = 'response')
+    salesman = models.OneToOneField(SalesmanLoginInfo, on_delete = models.SET_NULL, related_name = 'response')
 
 
 class LoginSalesmanSerializer(serializers.ModelSerializer):
@@ -436,7 +436,7 @@ class DiscountInfo(CandidateProduct):
 
 
 class ResponseWithDiscounts(MyResponse):
-    discounts = models.OneToOneField(DiscountInfo, on_delete = models.CASCADE)
+    discounts = models.OneToOneField(DiscountInfo, on_delete = models.SET_NULL)
 
 
 class ResponseWithDiscountsSerializer(serializers.ModelSerializer):
@@ -489,7 +489,7 @@ get_cities = """
 
 
 class ResponseWithCities(MyResponse):
-    cities = models.OneToOneField(City, on_delete = models.CASCADE)
+    cities = models.OneToOneField(City, on_delete = models.SET_NULL)
 
 
 class ResponseWithCitiesSerializer(serializers.ModelSerializer):
@@ -530,7 +530,7 @@ get_shop_kinds = """
 
 
 class ResponseWithShopKinds(MyResponse):
-    shop_kinds = models.OneToOneField(ShopKind, on_delete = models.CASCADE)
+    shop_kinds = models.OneToOneField(ShopKind, on_delete = models.SET_NULL)
 
 
 class ResponseWithShopKindsSerializer(serializers.ModelSerializer):

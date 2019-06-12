@@ -839,6 +839,28 @@ class AddPoll(APIView):
                     'result': False,
                     'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
                 })
+        elif type_poll == 'ShortAnswerPoll':
+            try:
+                with transaction.atomic():
+                    poll_serializer = PollSerializer(data = request.data)
+                    poll_serializer.is_valid(raise_exception = True)
+                    poll = poll_serializer.save()
+                    data = {
+                        'poll': poll.pk
+                    }
+                    short_answer_serializer = ShortAnswerSerializer(data = data)
+                    short_answer_serializer.is_valid(raise_exception = True)
+                    short_answer_serializer.save()
+                    return Response({
+                        'result': True,
+                        'message': 'اضافه کردن نظرسنجی با موفقیت انجام شد.'
+                    })
+            except serializers.ValidationError as e:
+                print(e)
+                return Response({
+                    'result': False,
+                    'message': 'اضافه کردن نظرسنجی با خطا مواجه شد.'
+                })
         elif type_poll == 'LinearScalePoll':
             try:
                 with transaction.atomic():
