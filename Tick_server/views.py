@@ -1381,7 +1381,7 @@ class Statistics(APIView):
             count = poll.linear_scale_poll.choices_count
             possible_answers = {}
             cnt = 0
-            while count:
+            while count + 1:
                 possible_answers[start + step * cnt] = 0
                 count -= 1
                 cnt += 1
@@ -1519,7 +1519,6 @@ class SalesmanShops(APIView):
 
 
 # noinspection PyMethodMayBeStatic
-# TODO
 class SalesmanPolls(APIView):
     @silk_profile()
     def get(self, request):
